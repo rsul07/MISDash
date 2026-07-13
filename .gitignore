@@ -1,0 +1,25 @@
+# Виртуальное окружение
+venv/
+env/
+.venv/
+
+# Секреты и конфигурации
+.env
+.env.local
+
+# Python кэш
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# IDE и редакторы
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Игнорируем будущие выгрузки данных, кроме эталонных
+data/*
+!data/patient_etalon.json
+!data/patient_small_example.json
