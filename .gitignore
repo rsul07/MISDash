@@ -23,3 +23,4 @@ __pycache__/
 data/*
 !data/patient_etalon.json
 !data/patient_small_example.json
+data/output_test/
