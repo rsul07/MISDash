@@ -27,6 +27,7 @@
 - [Техническое задание](docs/ts.md)
 - [Регламент командной работы](docs/workflow.md)
 - [Архитектура и работа модуля parser](docs/parser.md)
+- [Backend-driven контракт данных](docs/data_contract.md)
 
 ## Быстрый старт
 
