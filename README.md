@@ -70,12 +70,13 @@
    pytest -q
    ```
 
-6. Запустите минимальный frontend:
+6. Из корня репозитория запустите минимальный frontend:
 
    ```bash
    streamlit run src/app/main.py
    ```
 
+   Дополнительно задавать `PYTHONPATH` не требуется.
    Откройте показанный Streamlit адрес и загрузите `data/patient_etalon.json`.
    Веб-слой передает загруженный файл публичным фасадам `MISParser` и
    `DashboardService` и отображает только `DashboardResponse v1`; исходные поля
