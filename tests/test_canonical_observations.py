@@ -14,9 +14,9 @@ def test_observations_preserve_each_etalon_measurement() -> None:
     bundle = build_observations(_etalon_data())
 
     categories = Counter(item.category for item in bundle.observations)
-    assert len(bundle.observations) == 14_922
+    assert len(bundle.observations) == 20_268
     assert categories == {
-        "self-monitoring": 8_162,
+        "self-monitoring": 13_508,
         "laboratory": 6_293,
         "vital-signs": 467,
     }
@@ -28,6 +28,10 @@ def test_observations_preserve_each_etalon_measurement() -> None:
     assert first_bp.components[1].value.value == 79
     assert first_bp.device == "OMRON-M3-8842"
     assert first_bp.context["period"] == "день"
+    first_pulse = bundle.observations[1]
+    assert first_pulse.coding.code == "heart-rate"
+    assert first_pulse.value is not None
+    assert first_pulse.value.value == 60
 
 
 def test_laboratory_keeps_units_references_method_and_report_link() -> None:

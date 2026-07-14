@@ -7,7 +7,7 @@ from typing import Any
 
 from src.contracts.v1 import Observation
 
-from ...normalizers import clean_text, valid_bp_pair
+from ...normalizers import clean_text, valid_bp_pair, valid_number
 from ...records import as_mapping, first, records
 from ..common import source_reference
 from ..dates import parse_clinical_date
@@ -29,29 +29,48 @@ def build_diary_observations(data: Mapping[str, Any]) -> list[Observation]:
 def _blood_pressure(source: Any) -> list[Observation]:
     result: list[Observation] = []
     for index, item in enumerate(records(source)):
+        observed_at = parse_clinical_date(
+            first(item, "dt", "date", "measured_at", "izmereno")
+        )
+        source_ref = source_reference(
+            "dnevnik_samokontrolya.AD_izmereniya", index
+        )
         pair = valid_bp_pair(
             first(item, "sys", "sys_bp", "systolic"),
             first(item, "dia", "dia_bp", "diastolic"),
         )
-        if pair is None:
-            continue
-        result.append(
-            blood_pressure_observation(
-                observation_id=f"diary-blood-pressure-{index + 1}",
-                source=source_reference("dnevnik_samokontrolya.AD_izmereniya", index),
-                observed_at=parse_clinical_date(
-                    first(item, "dt", "date", "measured_at", "izmereno")
-                ),
-                category="self-monitoring",
-                systolic=pair[0],
-                diastolic=pair[1],
-                device=clean_text(first(item, "device_id", "device")) or None,
-                context=text_context(
-                    period=first(item, "period_dnya", "period"),
-                    input_source=first(item, "istochnik", "source"),
-                ),
-            )
+        device = clean_text(first(item, "device_id", "device")) or None
+        context = text_context(
+            period=first(item, "period_dnya", "period"),
+            input_source=first(item, "istochnik", "source"),
         )
+        if pair is not None:
+            result.append(
+                blood_pressure_observation(
+                    observation_id=f"diary-blood-pressure-{index + 1}",
+                    source=source_ref,
+                    observed_at=observed_at,
+                    category="self-monitoring",
+                    systolic=pair[0],
+                    diastolic=pair[1],
+                    device=device,
+                    context=context,
+                )
+            )
+        pulse = valid_number(first(item, "pulse", "heart_rate", "CHSS"), 20, 250)
+        if pulse is not None:
+            result.append(
+                Observation(
+                    id=f"diary-heart-rate-{index + 1}",
+                    source=source_ref,
+                    observed_at=observed_at,
+                    category="self-monitoring",
+                    coding=coding("Частота сердечных сокращений", "heart-rate"),
+                    value=quantity(pulse, "beats/min"),
+                    device=device,
+                    context=context,
+                )
+            )
     return result
 
 
