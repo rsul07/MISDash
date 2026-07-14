@@ -9,9 +9,10 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from src.backend import DashboardService, load_patient_record
+from src.backend import DashboardService
 from src.contracts.v1 import Encounter, Observation, Patient, PatientRecord
 from src.contracts.v1.common import Coding, Quantity, SourceReference
+from src.storage import load_patient_record, save_patient_record
 
 
 SOURCE = SourceReference(block="test")
@@ -38,10 +39,7 @@ def test_dashboard_service_builds_complete_frontend_response() -> None:
 
 def test_service_loads_canonical_record_from_json_boundary(tmp_path: Path) -> None:
     path = tmp_path / "patient_record.json"
-    path.write_text(
-        json.dumps(_record().model_dump(mode="json"), ensure_ascii=False),
-        encoding="utf-8",
-    )
+    saved_path = save_patient_record(path, _record())
 
     loaded = load_patient_record(path)
     response = DashboardService().build_from_path(
@@ -49,9 +47,11 @@ def test_service_loads_canonical_record_from_json_boundary(tmp_path: Path) -> No
         generated_at=GENERATED_AT,
     )
 
+    assert saved_path == path
     assert loaded.patient.id == "patient-1"
     assert response.patient.id == "patient-1"
     assert response.model_dump(mode="json")["generated_at"].endswith("Z")
+    assert not (tmp_path / "patient_record.json.tmp").exists()
 
 
 def test_repository_reports_invalid_json(tmp_path: Path) -> None:

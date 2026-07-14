@@ -45,7 +45,8 @@ flowchart LR
     Observations --> Record
     History --> Record
     Record --> Backend[DashboardService]
-    Record -. parse() .-> JSONOut[patient_record.json]
+    Record -. parse() .-> Storage[src/storage]
+    Storage --> JSONOut[patient_record.json]
 ```
 
 `engine.py` — тонкий фасад. Вся mapping-логика разделена по клиническим
@@ -66,7 +67,7 @@ flowchart LR
 | `canonical/observations/` | Дневник, лаборатория, измерения приёмов и structured vitals. |
 | `canonical/history.py` | Операции, госпитализации, прививки и инструментальные отчёты. |
 | `canonical/builder.py` | Сборка корневого `PatientRecord`. |
-| `writers.py` | Сериализация канонической модели в UTF-8 JSON для `parse()`. |
+| `src/storage/patient_records.py` | Валидация и атомарная запись канонического JSON для `parse()`. |
 
 ## Последовательность выполнения
 
@@ -86,7 +87,7 @@ sequenceDiagram
     Contract-->>Client: PatientRecord
 
     opt parse() вместо parse_record()
-        Parser->>FS: сохранить patient_record.json
+        Parser->>FS: атомарно сохранить patient_record.json через storage
         Parser-->>Client: {patient_record: Path}
     end
 ```

@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from src.contracts.v1 import PatientRecord
+from src.storage import save_patient_record
 
 from .canonical.builder import build_patient_record
 from .constants import DEFAULT_OUTPUT_DIR
@@ -20,7 +21,6 @@ from .normalizers import (
     parse_number,
 )
 from .records import as_mapping, first
-from .writers import write_json
 
 
 class MISParser:
@@ -49,12 +49,8 @@ class MISParser:
         """Parse and persist the canonical record, returning its path."""
 
         patient_record = self.parse_record()
-        self.output_dir.mkdir(parents=True, exist_ok=True)
         path = self.output_dir / "patient_record.json"
-        write_json(
-            path,
-            patient_record.model_dump(mode="json"),
-        )
+        save_patient_record(path, patient_record)
         return {"patient_record": path}
 
     def parse_record(self) -> PatientRecord:

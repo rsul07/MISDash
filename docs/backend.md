@@ -84,7 +84,7 @@ payload = response.model_dump(mode="json")
 
 ```mermaid
 flowchart LR
-    JSON[patient_record.json] --> Repository[repository.py]
+    JSON[patient_record.json] --> Repository[src/storage]
     Repository --> Record[PatientRecord v1]
     Record --> Service[DashboardService]
     Service --> Profile[profile.py]
@@ -96,7 +96,8 @@ flowchart LR
     Response --> Frontend
 ```
 
-`repository.py` отвечает только за чтение и строгую валидацию канонического
-JSON. Проекции получают Pydantic-модель и не зависят от файловой системы.
+`src/storage/patient_records.py` отвечает только за чтение, строгую валидацию
+и атомарную запись канонического JSON. Проекции получают Pydantic-модель и не
+зависят от файловой системы.
 `generated_at` и дата расчёта возраста могут передаваться явно, что делает
 сервис детерминированным в тестах.
