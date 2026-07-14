@@ -79,3 +79,12 @@ print(paths["patient_record"])
 Основной backend-контракт сохраняется в `patient_record.json`. Файлы
 `profile.json`, `vitals.csv` и `visits.csv` временно формируются рядом как
 legacy-проекции для совместимости текущего дашборда.
+
+Backend-проекция для frontend строится только из канонического контракта:
+
+```python
+from src.backend import DashboardService
+
+dashboard = DashboardService().build_from_path(paths["patient_record"])
+payload = dashboard.model_dump(mode="json")
+```

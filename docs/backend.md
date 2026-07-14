@@ -68,3 +68,35 @@ DashboardResponse v1
 несовместимой единицей не подмешивается в ряд без доказанной формулы конверсии.
 Глюкоза и креатинин мочи не классифицируются как показатели крови. Точки
 остаются отдельными и сортируются по времени; канонический слой не изменяется.
+
+## Фасад сервиса
+
+`DashboardService` — единственная точка композиции frontend-ответа:
+
+```python
+from src.backend import DashboardService
+
+response = DashboardService().build_from_path(
+    "data/output_test/patient_record.json"
+)
+payload = response.model_dump(mode="json")
+```
+
+```mermaid
+flowchart LR
+    JSON[patient_record.json] --> Repository[repository.py]
+    Repository --> Record[PatientRecord v1]
+    Record --> Service[DashboardService]
+    Service --> Profile[profile.py]
+    Service --> Metrics[metrics.py]
+    Service --> Visits[visits.py]
+    Profile --> Response[DashboardResponse v1]
+    Metrics --> Response
+    Visits --> Response
+    Response --> Frontend
+```
+
+`repository.py` отвечает только за чтение и строгую валидацию канонического
+JSON. Проекции получают Pydantic-модель и не зависят от файловой системы.
+`generated_at` и дата расчёта возраста могут передаваться явно, что делает
+сервис детерминированным в тестах.

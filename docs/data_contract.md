@@ -218,7 +218,7 @@ pack-years, алкоголь, физическая активность и пр�
 1. ✅ Добавлены Pydantic-модели `PatientRecord v1` и contract-тесты.
 2. ✅ Реализованы небольшие адаптеры patient, encounters, observations и history.
 3. ✅ `patient_record.json` сохраняется вместе с текущими файлами.
-4. ⏳ Добавить backend service, который строит `DashboardResponse v1` из `PatientRecord`.
+4. ✅ Добавлен backend service, который строит `DashboardResponse v1` из `PatientRecord`.
 5. ⏳ Перевести frontend на backend service.
 6. ⏳ После миграции пометить три старых файла deprecated и удалить отдельной major-версией.
 
