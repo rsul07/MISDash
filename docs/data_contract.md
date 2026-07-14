@@ -132,6 +132,20 @@ PatientRecord
 - Удаление, переименование или изменение смысла поля требует новой major-версии.
 - Pydantic-модели и contract-тесты являются исполняемой спецификацией.
 
+### Структура реализации v1
+
+```text
+src/contracts/v1/
+├── common.py        # базовая модель, provenance, coding, quantity
+├── patient.py       # patient, allergies, conditions, medications
+├── encounters.py    # encounters, practitioner, diagnoses
+├── observations.py  # vitals, laboratory and self-monitoring events
+├── history.py       # procedures, hospitalizations, immunizations, reports
+└── record.py        # корневой PatientRecord
+```
+
+Модели запрещают неизвестные поля (`extra="forbid"`), поэтому исходные имена МИС не могут случайно протечь в публичный backend-контракт.
+
 ## Совместимая миграция
 
 Старые `profile.json`, `vitals.csv` и `visits.csv` временно сохраняются как legacy dashboard projection.
