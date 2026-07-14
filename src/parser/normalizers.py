@@ -131,6 +131,8 @@ def has_value(value: Any) -> bool:
         return False
     if isinstance(value, str):
         return value.strip().casefold() not in MISSING_STRINGS
+    if isinstance(value, float):
+        return math.isfinite(value)
     return True
 
 

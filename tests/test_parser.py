@@ -13,6 +13,7 @@ from src.parser.engine import (
     normalize_date,
     parse_number,
 )
+from src.parser.records import first
 
 
 @pytest.mark.parametrize(
@@ -56,6 +57,13 @@ def test_normalize_date(raw: object, expected: str | None) -> None:
 )
 def test_parse_number(raw: object, expected: float | None) -> None:
     assert parse_number(raw) == expected
+
+
+@pytest.mark.parametrize("non_finite", [float("nan"), float("inf"), float("-inf")])
+def test_first_skips_non_finite_values_and_uses_fallback(non_finite: float) -> None:
+    payload = {"preferred": non_finite, "fallback": "usable"}
+
+    assert first(payload, "preferred", "fallback") == "usable"
 
 
 @pytest.mark.parametrize(

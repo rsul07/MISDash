@@ -115,6 +115,7 @@ sequenceDiagram
 
 Числа принимаются как `int`, `float` или строки с точкой/запятой. Булевы,
 бесконечные и составные строки числами не считаются.
+`NaN` и бесконечности также считаются пропусками при выборе fallback alias.
 
 ```python
 from src.parser.engine import normalize_date, parse_number

@@ -9,6 +9,7 @@ from pathlib import Path
 from src.parser.canonical.dates import parse_clinical_date
 from src.parser.canonical.history import build_history
 from src.parser.canonical.patient import build_patient
+from src.parser.canonical.common import original_date_text
 
 
 def test_parse_clinical_date_preserves_supported_precision() -> None:
@@ -21,6 +22,14 @@ def test_parse_clinical_date_preserves_supported_precision() -> None:
     )
     assert parse_clinical_date("2017") is None
     assert parse_clinical_date("1984 г.") is None
+
+
+def test_original_date_text_is_kept_only_when_date_was_not_parsed() -> None:
+    parsed = parse_clinical_date("01.03.2024")
+
+    assert original_date_text("01.03.2024", parsed) is None
+    assert original_date_text("1984 г.", None) == "1984 г."
+    assert original_date_text("-", None) is None
 
 
 def test_patient_adapter_maps_identity_allergies_and_conditions() -> None:

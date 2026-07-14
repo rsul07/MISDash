@@ -29,5 +29,6 @@ def source_reference(
 def original_date_text(value: Any, parsed: object | None) -> str | None:
     """Keep an imprecise or invalid source date without inventing precision."""
 
-    text = clean_text(value)
-    return text or None if parsed is None else None
+    if parsed is not None:
+        return None
+    return clean_text(value) or None
