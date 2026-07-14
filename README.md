@@ -32,6 +32,7 @@
 - [Архитектура и работа модуля parser](docs/parser.md)
 - [Backend-driven контракт данных](docs/data_contract.md)
 - [Backend service и DashboardResponse v1](docs/backend.md)
+- [Frontend handoff: Streamlit MVP с Codex](docs/frontend_handoff.md)
 
 ## Быстрый старт
 
