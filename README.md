@@ -67,8 +67,19 @@
 5. Проверьте тесты:
 
    ```bash
-   pytest
+   pytest -q
    ```
+
+6. Запустите минимальный frontend:
+
+   ```bash
+   streamlit run src/app/main.py
+   ```
+
+   Откройте показанный Streamlit адрес и загрузите `data/patient_etalon.json`.
+   Веб-слой передает загруженный файл публичным фасадам `MISParser` и
+   `DashboardService` и отображает только `DashboardResponse v1`; исходные поля
+   МИС и canonical adapters во frontend не используются.
 
 ## Парсер
 
