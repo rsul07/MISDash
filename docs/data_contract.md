@@ -80,6 +80,8 @@ flowchart LR
 PatientRecord
 ├── schema_version
 ├── patient
+├── social_history
+├── family_history[]
 ├── allergies[]
 ├── conditions[]
 ├── medications[]
@@ -139,6 +141,7 @@ PatientRecord
 src/contracts/v1/
 ├── common.py        # базовая модель, provenance, coding, quantity
 ├── patient.py       # patient, allergies, conditions, medications
+├── social.py        # lifestyle and family history
 ├── encounters.py    # encounters, practitioner, diagnoses
 ├── observations.py  # vitals, laboratory and self-monitoring events
 ├── history.py       # procedures, hospitalizations, immunizations, reports
@@ -162,6 +165,7 @@ canonical/
 ├── patient.py  # пациент, аллергии, хронические состояния
 ├── encounters.py # приёмы, диагнозы и назначения
 ├── observations/ # отдельные адаптеры дневника, лаборатории, vitals и приёмов
+├── social.py    # курение, алкоголь, образ жизни и семейный анамнез
 └── history.py  # операции, госпитализации, прививки, исследования
 ```
 
@@ -187,6 +191,18 @@ canonical/
 На эталонном пациенте формируется 14 922 наблюдения: 8 162 записи
 самоконтроля, 6 293 лабораторных результата и 467 измерений на приёмах.
 Лабораторные результаты связаны с 1 416 отчётами, а не схлопываются по дню.
+
+Социальный анамнез хранится отдельной стабильной моделью: курение,
+pack-years, алкоголь, физическая активность и профессиональные вредности.
+Семейный анамнез представлен отдельными событиями с родством, заболеванием,
+возрастом дебюта и исходом.
+
+### Осознанно исключённые блоки
+
+В `PatientRecord v1` не копируются `legacy_import_v3`, `sluzhebnoe` и
+`EHR_EVENT_LOG`: это технические журналы и дубли импорта, а не клинические
+события. Они остаются в исходной выгрузке для аудита. Новое исключение
+клинического блока требует отдельного решения и изменения этой документации.
 
 ## Совместимая миграция
 

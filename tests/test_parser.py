@@ -237,6 +237,8 @@ def test_parser_writes_contract_files_from_dirty_data(tmp_path: Path) -> None:
     )
     assert patient_record["schema_version"] == "1.0"
     assert patient_record["patient"]["full_name"] == "Иванов Иван Иванович"
+    assert patient_record["social_history"] is None
+    assert patient_record["family_history"] == []
     assert len(patient_record["encounters"]) == 1
     assert patient_record["encounters"][0]["history"] is None
     assert patient_record["encounters"][0]["objective"].startswith("ЧСС 72")

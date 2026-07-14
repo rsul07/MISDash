@@ -11,11 +11,14 @@ from .encounters import Encounter
 from .history import DiagnosticReport, Hospitalization, Immunization, Procedure
 from .observations import Observation
 from .patient import Allergy, Condition, Medication, Patient
+from .social import FamilyHistory, SocialHistory
 
 
 class PatientRecord(ContractModel):
     schema_version: Literal["1.0"] = "1.0"
     patient: Patient
+    social_history: SocialHistory | None = None
+    family_history: list[FamilyHistory] = Field(default_factory=list)
     allergies: list[Allergy] = Field(default_factory=list)
     conditions: list[Condition] = Field(default_factory=list)
     medications: list[Medication] = Field(default_factory=list)

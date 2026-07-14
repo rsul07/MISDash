@@ -11,6 +11,7 @@ from .encounters import build_encounters
 from .history import build_history
 from .observations import build_observations
 from .patient import build_patient
+from .social import build_social_history
 
 
 def build_patient_record(data: Mapping[str, Any]) -> PatientRecord:
@@ -18,8 +19,11 @@ def build_patient_record(data: Mapping[str, Any]) -> PatientRecord:
     encounters = build_encounters(data)
     observations = build_observations(data)
     history = build_history(data)
+    social = build_social_history(data)
     return PatientRecord(
         patient=patient.patient,
+        social_history=social.social_history,
+        family_history=social.family_history,
         allergies=patient.allergies,
         conditions=patient.conditions,
         medications=encounters.medications,
