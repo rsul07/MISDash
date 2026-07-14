@@ -72,19 +72,18 @@
 ```python
 from src.parser import MISParser
 
-paths = MISParser("data/patient_etalon.json").parse()
-print(paths["patient_record"])
+record = MISParser("data/patient_etalon.json").parse_record()
 ```
 
-Основной backend-контракт сохраняется в `patient_record.json`. Файлы
-`profile.json`, `vitals.csv` и `visits.csv` временно формируются рядом как
-legacy-проекции для совместимости текущего дашборда.
+Parser возвращает единственный канонический контракт `PatientRecord`. Для
+сохранения в `patient_record.json` используйте `parse()` вместо
+`parse_record()`.
 
 Backend-проекция для frontend строится только из канонического контракта:
 
 ```python
 from src.backend import DashboardService
 
-dashboard = DashboardService().build_from_path(paths["patient_record"])
+dashboard = DashboardService().build(record)
 payload = dashboard.model_dump(mode="json")
 ```

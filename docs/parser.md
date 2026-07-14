@@ -1,473 +1,171 @@
 # Модуль `parser`: устройство и поток данных
 
-Модуль `src/parser` преобразует «грязную» JSON-выгрузку МИС в стабильные
-backend-контракты. Во время совместимой миграции `MISParser` продолжает
-формировать полный `patient_record.json` и три legacy-проекции для дашборда:
+`src/parser` преобразует грязную JSON-выгрузку МИС в единственный
+канонический контракт `PatientRecord v1`. Parser не строит представления
+конкретного экрана и не выполняет необратимую дневную агрегацию.
 
-- `patient_record.json` — версионированная каноническая медицинская запись;
+## Публичный API
 
-- `profile.json` — карточка пациента;
-- `vitals.csv` — дневной временной ряд показателей;
-- `visits.csv` — лента врачебных приёмов.
-
-Главная точка входа — класс `MISParser` из `src.parser` или `src.parser.engine`.
+Основной сценарий работает без промежуточного файла:
 
 ```python
 from src.parser import MISParser
 
-paths = MISParser("data/patient_etalon.json").parse()
+record = MISParser("data/patient_etalon.json").parse_record()
+```
 
-print(paths["profile"])
-print(paths["vitals"])
-print(paths["visits"])
+Если каноническую запись нужно сохранить:
+
+```python
+paths = MISParser("data/patient_etalon.json").parse()
 print(paths["patient_record"])
 ```
 
-Метод `run()` является полным синонимом `parse()`.
+`parse()` сохраняет только `patient_record.json`. `run()` является его
+командным алиасом. Выходная директория выбирается в порядке:
 
-## 1. Общая архитектура
+1. аргумент `output_dir`;
+2. переменная окружения `OUTPUT_DIR`;
+3. `data/processed/`.
 
-`engine.py` не содержит доменной логики. Это фасад, который загружает JSON, вызывает специализированные сборщики и сохраняет результат.
+## Архитектура
 
 ```mermaid
 flowchart LR
-    User[Клиентский код] --> Init[src/parser/__init__.py]
-    Init --> Engine[engine.py<br/>MISParser]
-
-    Engine --> Constants[constants.py<br/>контракты и границы]
-    Engine --> Profile[profile.py<br/>build_profile]
-    Engine --> Visits[visits.py<br/>build_visits]
-    Engine --> Vitals[vitals.py<br/>build_vitals]
-    Engine --> Builder[canonical/builder.py<br/>build_patient_record]
-    Engine --> Writers[writers.py<br/>JSON и CSV]
-
-    Builder --> Patient[canonical/patient.py]
-    Builder --> Encounters[canonical/encounters.py]
-    Builder --> Observations[canonical/observations/]
-    Builder --> History[canonical/history.py]
-
-    Profile --> Normalizers[normalizers.py<br/>даты, числа, текст]
-    Profile --> Records[records.py<br/>безопасный доступ и дубли]
-
-    Visits --> Normalizers
-    Visits --> Records
-
-    Vitals --> Normalizers
-    Vitals --> Records
-    Vitals --> Extractors[extractors.py<br/>regex АД и ЧСС]
-    Extractors --> Normalizers
+    JSON[Грязный JSON МИС] --> Engine[engine.py<br/>MISParser]
+    Engine --> Builder[canonical/builder.py]
+    Builder --> Patient[patient.py]
+    Builder --> Social[social.py]
+    Builder --> Encounters[encounters.py]
+    Builder --> Observations[observations/]
+    Builder --> History[history.py]
+    Patient --> Record[PatientRecord v1]
+    Social --> Record
+    Encounters --> Record
+    Observations --> Record
+    History --> Record
+    Record --> Backend[DashboardService]
+    Record -. parse() .-> JSONOut[patient_record.json]
 ```
 
-### Ответственность файлов
+`engine.py` — тонкий фасад. Вся mapping-логика разделена по клиническим
+доменам и композируется только в `canonical/builder.py`.
 
-| Файл | Ответственность |
+### Ответственность модулей
+
+| Модуль | Ответственность |
 |---|---|
-| `__init__.py` | Загружает `.env` через `python-dotenv`, экспортирует `MISParser` и `OUTPUT_DIR`. |
-| `engine.py` | Публичный фасад: чтение JSON, запуск сборщиков, создание выходной директории и запись файлов. |
-| `constants.py` | Имена и порядок полей контрактов, допустимые диапазоны показателей, маркеры пропусков. |
-| `normalizers.py` | Нормализация дат, чисел, строк, пола и возраста; проверка чисел и пары АД. |
-| `records.py` | Безопасный обход словарей, поддержка альтернативных имён, коллекции записей и объединение дублей. |
-| `extractors.py` | Регулярные выражения для извлечения АД и ЧСС из свободного текста. |
-| `profile.py` | Сборка `profile.json`: ФИО, возраст, ИМТ, аллергии, диагнозы и текущая терапия. |
-| `visits.py` | Сборка строк `visits.csv` и сортировка приёмов по датам. |
-| `vitals.py` | Сбор показателей из дневника, лаборатории и приёмов; дневная агрегация и приоритет источников. |
-| `writers.py` | Сериализация UTF-8 JSON и CSV с фиксированным порядком колонок. |
-| `canonical/common.py` | Общие provenance-ссылки и детерминированные ID канонических событий. |
-| `canonical/dates.py` | Нормализация клинических дат с сохранением времени и без ложной точности. |
-| `canonical/patient.py` | Адаптация пациента, аллергий и хронических диагнозов в `PatientRecord v1`. |
-| `canonical/encounters.py` | Полные приёмы, основной/сопутствующие диагнозы и связанные назначения. |
-| `canonical/observations/` | Отдельные события дневника, лаборатории, приёмов и структурированного `vitals`; без дневной агрегации. |
-| `canonical/social.py` | Курение, алкоголь, физическая активность, профессиональные вредности и семейный анамнез. |
-| `canonical/history.py` | Адаптация операций, госпитализаций, прививок и инструментальных отчётов. |
-| `canonical/builder.py` | Композиция доменных адаптеров в корневой `PatientRecord v1`. |
+| `engine.py` | Загрузка исходного JSON, выбор `data`/корня, запуск canonical builder. |
+| `constants.py` | Маркеры пропусков, подсказки для распознавания коллекций, default output path. |
+| `normalizers.py` | Даты, числа, текст и физиологическая валидация. |
+| `records.py` | Безопасный доступ, альтернативные имена, keyed-коллекции, дубли приёмов. |
+| `extractors.py` | Детерминированное извлечение АД и ЧСС из текста. |
+| `canonical/patient.py` | Пациент, аллергии и хронические состояния. |
+| `canonical/social.py` | Образ жизни и семейный анамнез. |
+| `canonical/encounters.py` | Полные приёмы, диагнозы и назначения. |
+| `canonical/observations/` | Дневник, лаборатория, измерения приёмов и structured vitals. |
+| `canonical/history.py` | Операции, госпитализации, прививки и инструментальные отчёты. |
+| `canonical/builder.py` | Сборка корневого `PatientRecord`. |
+| `writers.py` | Сериализация канонической модели в UTF-8 JSON для `parse()`. |
 
-Канонические адаптеры не зависят от legacy-сборщиков. `builder.py` только
-композирует их результаты, поэтому новый домен можно добавлять отдельным
-модулем без роста `engine.py`.
-
-## 2. Последовательность выполнения
+## Последовательность выполнения
 
 ```mermaid
 sequenceDiagram
     actor Client as Клиент
     participant Parser as MISParser
-    participant Profile as profile.py
-    participant Visits as visits.py
-    participant Vitals as vitals.py
-    participant Canonical as canonical/builder.py
-    participant Writers as writers.py
+    participant Builder as canonical/builder.py
+    participant Contract as PatientRecord v1
     participant FS as Файловая система
 
-    Client->>Parser: MISParser(input_path, output_dir)
-    Client->>Parser: parse()
-    Parser->>FS: открыть JSON в UTF-8/UTF-8 BOM
-    FS-->>Parser: исходный payload
-    Parser->>Parser: выбрать payload["data"] или корень
+    Client->>Parser: parse_record()
+    Parser->>FS: прочитать UTF-8/UTF-8 BOM JSON
+    Parser->>Parser: выбрать payload.data или payload
+    Parser->>Builder: build_patient_record(data)
+    Builder->>Contract: валидировать доменные модели
+    Contract-->>Client: PatientRecord
 
-    Parser->>Profile: build_profile(data)
-    Profile-->>Parser: dict профиля
-
-    Parser->>Visits: build_visits(data)
-    Visits-->>Parser: list строк приёмов
-
-    Parser->>Vitals: build_vitals(data)
-    Vitals-->>Parser: list дневных показателей
-
-    Parser->>Canonical: build_patient_record(data)
-    Canonical-->>Parser: PatientRecord v1
-
-    Parser->>FS: создать OUTPUT_DIR
-    Parser->>Writers: write_profile(...)
-    Writers->>FS: profile.json
-    Parser->>Writers: write_csv(..., vitals)
-    Writers->>FS: vitals.csv
-    Parser->>Writers: write_csv(..., visits)
-    Writers->>FS: visits.csv
-    Parser->>Writers: write_json(PatientRecord)
-    Writers->>FS: patient_record.json
-    Parser-->>Client: dict[str, Path]
+    opt parse() вместо parse_record()
+        Parser->>FS: сохранить patient_record.json
+        Parser-->>Client: {patient_record: Path}
+    end
 ```
 
-### Выбор выходной директории
+## Отказоустойчивый обход
 
-При создании `MISParser` используется первый доступный вариант:
+`records.first()` ищет первое содержательное значение по нескольким aliases и
+никогда не использует обязательный доступ `mapping[key]`. `records.records()`
+понимает и обычные массивы, и коллекции, индексированные ключами:
 
-1. Явный аргумент `output_dir`.
-2. Переменная окружения `OUTPUT_DIR`.
-3. Значение по умолчанию `data/processed/`.
+```json
+{"v1": {"id_priema": "v1"}, "v2": {"id_priema": "v2"}}
+```
+
+Отсутствующий или неверно типизированный блок даёт пустую коллекцию/значение,
+но не `KeyError` или `AttributeError`. Синтаксически неверный JSON остаётся
+явной ошибкой `ValueError`, а инфраструктурные ошибки не маскируются.
+
+## Нормализация
+
+Даты поддерживают ISO, `DD.MM.YYYY`, `DD/MM/YYYY`, `YYYYMMDD`, варианты со
+временем и Unix timestamp. Canonical adapter сохраняет `datetime`, если время
+известно. Неполный год вроде `2017` не превращается в искусственное
+`2017-01-01`; исходный текст сохраняется рядом.
+
+Числа принимаются как `int`, `float` или строки с точкой/запятой. Булевы,
+бесконечные и составные строки числами не считаются.
 
 ```python
-# Перекрывает и .env, и значение по умолчанию.
-parser = MISParser(
-    "data/patient_etalon.json",
-    output_dir="/tmp/mis-result",
-)
+from src.parser.engine import normalize_date, parse_number
+
+normalize_date("14.03.1967")  # "1967-03-14"
+parse_number("46,5")          # 46.5
 ```
 
-Для локального тестирования можно задать в `.env` значение `OUTPUT_DIR=data/output_test/`, чтобы не перезаписывать контрактные примеры в `data/processed/`.
+## Дубли приёмов
 
-## 3. Что происходит с входным JSON
+`records.unique_visits()` считает ID с суффиксами `_dup`/`-dup` одной
+логической записью. Более полная запись становится основной, а отсутствующие
+части дополняются из дубля. При отсутствии ID используется составной признак
+из даты, врача, диагноза и жалоб.
 
-### 3.1. Загрузка и выбор медицинского блока
+## Наблюдения
 
-`MISParser._load_json()` читает файл с кодировкой `utf-8-sig`. Это позволяет принимать как обычный UTF-8, так и UTF-8 с BOM.
+Каждое валидное измерение остаётся отдельным `Observation` с точной датой,
+единицей, источником и связями. АД хранится компонентами systolic/diastolic;
+пульс — отдельным событием. Лабораторные результаты сохраняют референсы,
+флаги, метод, статус, биоматериал и связь с `DiagnosticReport`.
 
-Если JSON синтаксически повреждён, ошибка `JSONDecodeError` преобразуется в понятный `ValueError` с именем файла. После загрузки `_medical_data()` поддерживает обе формы входа:
+Regex для свободного текста используется как fallback после структурированных
+полей. Систолическое и диастолическое давление никогда не смешиваются из
+разных фрагментов.
 
-```json
-{
-  "result": {"code": 0},
-  "data": {
-    "PATIENT_INFO": {}
-  }
-}
-```
+## Выходной контракт
 
-и:
+Корень `PatientRecord` содержит `schema_version: "1.0"`, пациента и коллекции
+клинических событий. Pydantic-модели запрещают неизвестные поля, поэтому сырые
+ключи МИС не могут случайно стать частью backend API. Полная схема описана в
+[контракте данных](data_contract.md).
 
-```json
-{
-  "PATIENT_INFO": {}
-}
-```
+## Как расширять parser
 
-### 3.2. Безопасный доступ к полям
+При добавлении нового клинического домена:
 
-Функция `records.first()` ищет значение по нескольким возможным именам и не обращается к ключу через `mapping[key]`. Например, дата рождения ищется по цепочке:
+1. расширить соответствующие модели в `src/contracts/v1/`;
+2. создать отдельный адаптер в `src/parser/canonical/`;
+3. подключить его только в `canonical/builder.py`;
+4. добавить contract-тесты и тесты грязных форм входа;
+5. обновить этот документ и `docs/data_contract.md`.
 
-```text
-birht_date → birtf_date → birth_date → DATE_ROJD → date_rojd
-```
+Новое альтернативное имя поля добавляется рядом с текущими aliases в
+соответствующем adapter. Новый формат даты добавляется в normalizer с
+параметризованным тестом.
 
-Если поле или блок отсутствует, возвращается `None`, пустая строка или пустой список в зависимости от выходного контракта. Поэтому отсутствие `social_anamnez`, `instrumental_issled` или `PRIEMY_VRACHA` не вызывает `KeyError`/`AttributeError`.
-
-`records.records()` также поддерживает две формы коллекций:
-
-```json
-[
-  {"id_priema": "v1"},
-  {"id_priema": "v2"}
-]
-```
-
-и:
-
-```json
-{
-  "v1": {"id_priema": "v1"},
-  "v2": {"id_priema": "v2"}
-}
-```
-
-## 4. Нормализация
-
-### Даты
-
-`normalizers.normalize_date()` возвращает ISO-дату `YYYY-MM-DD` или `None`.
-
-Поддерживаются:
-
-- `YYYY-MM-DD`;
-- `DD.MM.YYYY`;
-- `DD/MM/YYYY`;
-- варианты с двузначным годом;
-- ISO datetime;
-- `YYYYMMDD`;
-- дата со временем `DD.MM.YYYY HH:MM`;
-- Unix timestamp числом или строкой;
-- Unix timestamp в миллисекундах/микросекундах.
-
-Unix timestamp интерпретируется в UTC, поэтому дата не зависит от часового пояса сервера.
-
-```python
-from src.parser.engine import normalize_date
-
-normalize_date("14.03.1967")       # "1967-03-14"
-normalize_date("1709251200")       # "2024-03-01"
-normalize_date("нет данных")       # None
-```
-
-### Числа
-
-`parse_number()` принимает `int`, `float` и числовые строки. Десятичная запятая заменяется точкой, пробелы удаляются.
-
-```python
-from src.parser.engine import parse_number
-
-parse_number(" 46,5 ")  # 46.5
-parse_number("н/д")     # None
-parse_number(True)       # None
-```
-
-Невалидные, бесконечные и булевы значения не считаются числами.
-
-### Маркеры пропусков
-
-Следующие строки считаются отсутствующим значением:
-
-```text
-"", "-", "н/д", "нет данных", "null", "none", "nan"
-```
-
-## 5. Сборка профиля
-
-`profile.build_profile()` использует блоки:
-
-- `PATIENT_INFO`;
-- `social_anamnez`;
-- `hron_zabolevaniya`;
-- `PRIEMY_VRACHA` — для последней терапии и резервного веса/роста.
-
-```mermaid
-flowchart TD
-    Patient[PATIENT_INFO] --> Identity[ФИО, дата рождения,<br/>пол, группа крови]
-    Patient --> BMI[Вес + рост → ИМТ]
-    Social[social_anamnez] --> Allergies[Аллергии]
-    Chronic[hron_zabolevaniya] --> Diseases[Хронические болезни]
-    Visits[PRIEMY_VRACHA] --> Therapy[Последняя доступная терапия]
-
-    Identity --> Profile[profile.json]
-    BMI --> Profile
-    Allergies --> Profile
-    Diseases --> Profile
-    Therapy --> Profile
-```
-
-Правила:
-
-- ФИО в верхнем регистре преобразуется в привычный регистр.
-- Возраст рассчитывается по дате рождения, если готового возраста нет.
-- ИМТ берётся из готового поля или рассчитывается как `вес / рост²`.
-- Аллергии записываются в виде `Агент (реакция)`.
-- Записи аллергий с пометкой `дубль` или `is_deleted` исключаются.
-- Текущей считается терапия из самого позднего приёма с непустым списком препаратов.
-
-## 6. Обработка дублей приёмов
-
-`records.unique_visits()` строит идентичность приёма по `id_priema`. Суффиксы `_dup` и `-dup` удаляются:
-
-```text
-VST-251204-689
-VST-251204-689_dup
-```
-
-считаются одной логической записью.
-
-Если два дубля содержат разные части данных, выбирается более полная запись, после чего отсутствующие поля дополняются из второй. Таким образом, диагноз из одной записи и измерения из другой не теряются.
-
-Если ID отсутствует, используется составной признак: нормализованная дата, врач, диагноз и жалобы.
-
-## 7. Сборка визитов
-
-`visits.build_visits()` преобразует каждый уникальный приём в пять колонок:
-
-| Выход | Основной источник |
-|---|---|
-| `date` | `dt_priem` |
-| `doctor` | `VRACH.fio_doc` |
-| `specialty` | `VRACH.spec_name` |
-| `diagnosis` | `diagnoz_priema.osnovnoy_txt` |
-| `complaints` | `JALOBY_TXT` |
-
-Пустые вложенные объекты безопасно обрабатываются. Полностью пустые записи не добавляются. Результат сортируется по ISO-дате; записи без даты помещаются в конец.
-
-## 8. Сборка vitals
-
-`vitals.build_vitals()` объединяет четыре источника:
-
-```mermaid
-flowchart LR
-    Diary[Дневник самоконтроля<br/>АД, пульс, глюкоза]
-    Direct[Универсальный блок vitals]
-    Labs[Лаборатория<br/>глюкоза, HbA1c,<br/>креатинин, холестерин]
-    Visits[Приёмы<br/>АД, ЧСС, вес]
-
-    Diary --> Daily[Группировка по ISO-дате]
-    Direct --> Daily
-    Labs --> Daily
-    Visits --> Daily
-    Daily --> Validate[Проверка диапазонов]
-    Validate --> Average[Среднее внутри<br/>источника и дня]
-    Average --> Output[vitals.csv]
-```
-
-### Приоритет источников
-
-Источники накладываются от менее приоритетного к более приоритетному:
-
-```text
-дневник → прямой vitals → лаборатория → врачебный приём
-```
-
-Это означает:
-
-- лабораторная глюкоза перекрывает бытовое измерение за ту же дату;
-- АД и ЧСС из врачебного приёма перекрывают дневник за ту же дату;
-- внутри одного источника несколько измерений за день усредняются;
-- АД и ЧСС после усреднения округляются до целого, остальные показатели — до двух знаков.
-
-### Извлечение АД и ЧСС из текста
-
-Для приёма действует следующий порядок:
-
-1. Полная валидная пара из `izmereniya.AD_sist` и `AD_diast`.
-2. Пара из `obektivny_status`.
-3. Пара из `JALOBY_TXT`.
-
-Систолическое и диастолическое давление не смешиваются из разных источников. Пара должна удовлетворять физиологическим диапазонам и условию `sys > dia`.
-
-Поддерживаются варианты:
-
-```text
-АД 150/90
-А/Д 150-90
-давление 150 на 90
-ЧСС 72
-пульс: 72
-HR 72
-```
-
-### Лабораторные показатели
-
-В `vitals.csv` попадают четыре вида результатов:
-
-- глюкоза крови;
-- HbA1c / гликированный гемоглобин;
-- креатинин крови;
-- общий холестерин.
-
-Удалённые результаты (`is_deleted`) игнорируются. Глюкоза и креатинин мочи не смешиваются с показателями крови.
-
-## 9. Выходные контракты
-
-Основной контракт описан строгими моделями `src/contracts/v1`. Порядок полей
-legacy-файлов фиксирован в `constants.py` и не зависит от порядка исходного JSON.
-
-### `patient_record.json`
-
-Корень содержит `schema_version: "1.0"`, пациента и коллекции клинических
-событий: социальный и семейный анамнез, аллергии, состояния, назначения,
-приёмы, наблюдения, операции, госпитализации, прививки и диагностические
-отчёты. Каждое событие имеет
-детерминированный ID и `source` с происхождением записи. Точная схема и правила
-версий описаны в [контракте данных](data_contract.md).
-
-### `profile.json`
-
-| Поле | Тип при наличии | Пустое значение |
-|---|---:|---:|
-| `fio` | `str` | `""` |
-| `birth_date` | ISO `str` | `""` |
-| `age` | `int` | `null` |
-| `gender` | `str` | `""` |
-| `blood_group` | `str` | `""` |
-| `bmi` | `float` | `null` |
-| `allergies` | `list[str]` | `[]` |
-| `chronic_diseases` | `list[str]` | `[]` |
-| `current_therapy` | `list[str]` | `[]` |
-
-### `vitals.csv`
-
-```text
-date,sys_bp,dia_bp,heart_rate,weight,glucose,hba1c,creatinine,cholesterol
-```
-
-Одна строка соответствует одной ISO-дате. Неизвестные значения записываются как пустые CSV-ячейки.
-
-### `visits.csv`
-
-```text
-date,doctor,specialty,diagnosis,complaints
-```
-
-## 10. Отказоустойчивость
-
-Парсер не маскирует все возможные ошибки. Его поведение разделено следующим образом:
-
-- отсутствующий блок или поле — пустое значение, обработка продолжается;
-- неожиданный тип вложенного блока — запись пропускается или нормализуется безопасно;
-- неверная дата/число — `None`, обработка продолжается;
-- синтаксически неверный JSON — `ValueError`;
-- отсутствующий входной файл — стандартный `FileNotFoundError`;
-- ошибка записи или прав доступа — стандартная файловая ошибка.
-
-Такой подход не позволяет «грязным» медицинским данным уронить весь разбор, но не скрывает инфраструктурные проблемы.
-
-## 11. Как расширять parser
-
-### Добавить новое альтернативное имя поля
-
-Добавьте его в соответствующий вызов `records.first()` рядом с основным именем.
-
-### Добавить новый формат даты
-
-Дополните `normalizers.normalize_date()` и добавьте параметризованный тест в `tests/test_parser.py`.
-
-### Добавить лабораторный показатель
-
-1. Добавьте колонку в `VITALS_FIELDS`.
-2. Добавьте допустимый диапазон в `VITAL_BOUNDS`.
-3. Дополните `_lab_field()` в `vitals.py`.
-4. Добавьте интеграционный тест контракта CSV.
-
-### Добавить новый выходной файл
-
-1. Создайте отдельный доменный сборщик `build_*`.
-2. Вызовите его из `MISParser.parse()`.
-3. Добавьте путь и writer в `engine.py`.
-
-### Добавить новый канонический домен
-
-1. Добавьте модели в подходящий модуль `src/contracts/v1/`.
-2. Создайте отдельный адаптер в `src/parser/canonical/`.
-3. Подключите результат только в `canonical/builder.py`.
-4. Обновите contract-тесты, тесты адаптера и эту документацию.
-4. Зафиксируйте схему в `constants.py` и документации.
-
-## 12. Проверка
+## Проверка
 
 ```bash
 pytest -q
 ```
 
-Тесты проверяют форматы дат и чисел, regex, отсутствующие блоки, выходные схемы, дневную агрегацию, keyed-коллекции и объединение дублей.
+Тесты покрывают контракты, форматы дат/чисел, regex, неправильные типы,
+keyed-коллекции, дубли, все canonical adapters и полный parser pipeline.

@@ -8,13 +8,10 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-from .constants import (
-    DEFAULT_OUTPUT_DIR,
-    PROFILE_FIELDS,
-    VISITS_FIELDS,
-    VITALS_FIELDS,
-)
+from src.contracts.v1 import PatientRecord
+
 from .canonical.builder import build_patient_record
+from .constants import DEFAULT_OUTPUT_DIR
 from .extractors import extract_vitals_from_text
 from .normalizers import (
     normalize_date,
@@ -22,19 +19,13 @@ from .normalizers import (
     parse_date,
     parse_number,
 )
-from .profile import build_profile
 from .records import as_mapping, first
-from .visits import build_visits
-from .vitals import build_vitals
-from .writers import write_csv, write_json, write_profile
+from .writers import write_json
 
 
 class MISParser:
-    """Parse one MIS JSON export and save dashboard-ready data files."""
+    """Parse one dirty MIS JSON export into PatientRecord v1."""
 
-    profile_fields = PROFILE_FIELDS
-    vitals_fields = VITALS_FIELDS
-    visits_fields = VISITS_FIELDS
     normalize_date = staticmethod(normalize_date)
     parse_date = staticmethod(parse_date)
     parse_number = staticmethod(parse_number)
@@ -55,29 +46,22 @@ class MISParser:
         self.output_dir = Path(configured_output).expanduser()
 
     def parse(self) -> dict[str, Path]:
-        """Parse the input and return paths of the generated contract files."""
+        """Parse and persist the canonical record, returning its path."""
 
-        data = self._medical_data(self._load_json())
-        profile = build_profile(data)
-        visits = build_visits(data)
-        vitals = build_vitals(data)
-        patient_record = build_patient_record(data)
-
+        patient_record = self.parse_record()
         self.output_dir.mkdir(parents=True, exist_ok=True)
-        paths = {
-            "profile": self.output_dir / "profile.json",
-            "vitals": self.output_dir / "vitals.csv",
-            "visits": self.output_dir / "visits.csv",
-            "patient_record": self.output_dir / "patient_record.json",
-        }
-        write_profile(paths["profile"], profile)
-        write_csv(paths["vitals"], VITALS_FIELDS, vitals)
-        write_csv(paths["visits"], VISITS_FIELDS, visits)
+        path = self.output_dir / "patient_record.json"
         write_json(
-            paths["patient_record"],
+            path,
             patient_record.model_dump(mode="json"),
         )
-        return paths
+        return {"patient_record": path}
+
+    def parse_record(self) -> PatientRecord:
+        """Parse the input without filesystem output."""
+
+        data = self._medical_data(self._load_json())
+        return build_patient_record(data)
 
     def run(self) -> dict[str, Path]:
         """Alias for :meth:`parse` for command-style callers."""
@@ -97,17 +81,8 @@ class MISParser:
         nested = first(root, "data")
         return as_mapping(nested) if isinstance(nested, Mapping) else root
 
-    # Compatibility wrappers for integrations that used these private methods.
-    _build_profile = staticmethod(build_profile)
-    _build_visits = staticmethod(build_visits)
-    _build_vitals = staticmethod(build_vitals)
-
-
 __all__ = [
     "MISParser",
-    "PROFILE_FIELDS",
-    "VITALS_FIELDS",
-    "VISITS_FIELDS",
     "extract_vitals_from_text",
     "normalize_date",
     "normalize_number",
