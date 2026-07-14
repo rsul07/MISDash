@@ -1,0 +1,66 @@
+= Пользовательская и разработческая документация
+
+== Пользовательский сценарий
+
+После завершения интерфейса пользовательский сценарий должен состоять из
+загрузки JSON-файла и просмотра сводки пациента. До появления frontend текущий
+конвейер можно проверить из Python:
+
+```python
+from src.parser import MISParser
+from src.backend import DashboardService
+
+record = MISParser("data/patient_etalon.json").parse_record()
+dashboard = DashboardService().build(record)
+payload = dashboard.model_dump(mode="json")
+```
+
+Локальная конфигурация читается из `.env`. Выходная директория задаётся
+переменной `OUTPUT_DIR`; секреты и локальные результаты не сохраняются в Git.
+
+== Документация разработчика
+
+Разработчику доступны отдельные документы по parser, контракту данных, backend,
+workflow и передаче frontend-задачи. Источником истины при расхождении являются
+Pydantic-контракты и тесты. Изменение публичного поведения должно сопровождаться
+обновлением соответствующей документации.
+
+Основные программные пакеты имеют направленные зависимости:
+
+```text
+src/parser       -> src/contracts/patient
+src/storage      -> src/contracts/patient
+src/backend      -> src/contracts/patient
+src/backend      -> src/contracts/dashboard
+src/app          -> src/backend, src/contracts/dashboard
+```
+
+Parser не импортирует backend или UI, а frontend не обращается к адаптерам
+исходной МИС.
+
+== Схема хранения данных
+
+Отдельная реляционная база данных в прототипе отсутствует. Канонический документ
+имеет следующую логическую схему:
+
+```text
+PatientRecord v1
+├── patient
+├── allergies[]
+├── conditions[]
+├── social_history
+├── family_history[]
+├── encounters[]
+├── diagnoses[]
+├── medications[]
+├── observations[]
+├── procedures[]
+├── hospitalizations[]
+├── immunizations[]
+└── reports[]
+```
+
+Сохранение выполняется атомарно через временный файл с последующей заменой.
+Загрузка включает JSON-декодирование и строгую валидацию `PatientRecord`.
+Таким образом, файловое хранилище уже имеет явную границу, которую можно заменить
+реализацией базы данных на следующем этапе.
