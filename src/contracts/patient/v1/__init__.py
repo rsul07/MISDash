@@ -1,4 +1,4 @@
-"""Public exports for the PatientRecord v1 contract."""
+"""Public exports for the canonical PatientRecord v1 contract."""
 
 from .encounters import Diagnosis, Encounter, Practitioner
 from .history import DiagnosticReport, Hospitalization, Immunization, Procedure

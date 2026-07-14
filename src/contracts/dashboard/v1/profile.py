@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import date
 
-from src.contracts.v1.common import ContractModel
+from src.contracts.patient.v1.common import ContractModel
 
 
 class DashboardPatient(ContractModel):

@@ -8,7 +8,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-from src.contracts.v1 import PatientRecord
+from src.contracts.patient.v1 import PatientRecord
 from src.storage import save_patient_record
 
 from .canonical.builder import build_patient_record

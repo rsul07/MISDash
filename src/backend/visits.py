@@ -1,7 +1,7 @@
 """Encounter timeline projection for DashboardResponse v1."""
 
 from src.contracts.dashboard.v1 import CodeLabel, VisitSummary
-from src.contracts.v1 import PatientRecord
+from src.contracts.patient.v1 import PatientRecord
 
 from .common import chronological_key
 

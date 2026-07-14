@@ -140,7 +140,7 @@ PatientRecord
 ### Структура реализации v1
 
 ```text
-src/contracts/v1/
+src/contracts/patient/v1/
 ├── common.py        # базовая модель, provenance, coding, quantity
 ├── patient.py       # patient, allergies, conditions, medications
 ├── social.py        # lifestyle and family history

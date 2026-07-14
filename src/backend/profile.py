@@ -11,7 +11,7 @@ from src.contracts.dashboard.v1 import (
     DashboardPatient,
     MedicationSummary,
 )
-from src.contracts.v1 import Observation, PatientRecord
+from src.contracts.patient.v1 import Observation, PatientRecord
 
 from .common import chronological_key
 

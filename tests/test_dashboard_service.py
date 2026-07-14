@@ -10,8 +10,8 @@ import pytest
 from pydantic import ValidationError
 
 from src.backend import DashboardService
-from src.contracts.v1 import Encounter, Observation, Patient, PatientRecord
-from src.contracts.v1.common import Coding, Quantity, SourceReference
+from src.contracts.patient.v1 import Encounter, Observation, Patient, PatientRecord
+from src.contracts.patient.v1.common import Coding, Quantity, SourceReference
 from src.storage import load_patient_record, save_patient_record
 
 

@@ -6,7 +6,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
-from src.contracts.v1 import DiagnosticReport, Observation
+from src.contracts.patient.v1 import DiagnosticReport, Observation
 
 from .diary import build_diary_observations
 from .direct import build_direct_observations

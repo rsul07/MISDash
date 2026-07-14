@@ -5,8 +5,8 @@ from __future__ import annotations
 from datetime import date, datetime
 
 from src.backend.metrics import build_metric_series
-from src.contracts.v1 import Observation, ObservationComponent, Patient, PatientRecord
-from src.contracts.v1.common import Coding, Quantity, SourceReference
+from src.contracts.patient.v1 import Observation, ObservationComponent, Patient, PatientRecord
+from src.contracts.patient.v1.common import Coding, Quantity, SourceReference
 
 
 SOURCE = SourceReference(block="test")

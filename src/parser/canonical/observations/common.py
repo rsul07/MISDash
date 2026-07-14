@@ -5,8 +5,8 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from src.contracts.v1 import Observation, ObservationComponent
-from src.contracts.v1.common import Coding, Quantity, ReferenceRange, SourceReference
+from src.contracts.patient.v1 import Observation, ObservationComponent
+from src.contracts.patient.v1.common import Coding, Quantity, ReferenceRange, SourceReference
 
 from ...normalizers import clean_text, parse_number
 

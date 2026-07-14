@@ -7,7 +7,7 @@ from typing import Literal
 
 from pydantic import Field
 
-from src.contracts.v1.common import ContractModel
+from src.contracts.patient.v1.common import ContractModel
 
 from .metrics import MetricSeries
 from .profile import (

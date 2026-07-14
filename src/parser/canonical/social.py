@@ -7,7 +7,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
-from src.contracts.v1 import AlcoholUse, FamilyHistory, SocialHistory, TobaccoUse
+from src.contracts.patient.v1 import AlcoholUse, FamilyHistory, SocialHistory, TobaccoUse
 
 from ..normalizers import clean_text, parse_number
 from ..records import as_mapping, first, records

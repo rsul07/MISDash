@@ -7,8 +7,8 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Any
 
-from src.contracts.v1 import Allergy, Condition, Patient
-from src.contracts.v1.common import Coding
+from src.contracts.patient.v1 import Allergy, Condition, Patient
+from src.contracts.patient.v1.common import Coding
 
 from ..normalizers import clean_name, clean_text, normalize_date, parse_number
 from ..records import as_mapping, first, records, truthy_flag

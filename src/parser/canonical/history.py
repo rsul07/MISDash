@@ -6,13 +6,13 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
-from src.contracts.v1 import (
+from src.contracts.patient.v1 import (
     DiagnosticReport,
     Hospitalization,
     Immunization,
     Procedure,
 )
-from src.contracts.v1.common import Coding
+from src.contracts.patient.v1.common import Coding
 
 from ..normalizers import clean_text
 from ..records import first, records, truthy_flag

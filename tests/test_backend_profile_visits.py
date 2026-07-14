@@ -6,14 +6,14 @@ from datetime import date, datetime
 
 from src.backend.profile import build_profile_projection
 from src.backend.visits import build_visit_summaries
-from src.contracts.v1 import (
+from src.contracts.patient.v1 import (
     Encounter,
     Medication,
     Observation,
     Patient,
     PatientRecord,
 )
-from src.contracts.v1.common import Coding, Quantity, SourceReference
+from src.contracts.patient.v1.common import Coding, Quantity, SourceReference
 
 
 SOURCE = SourceReference(block="test")

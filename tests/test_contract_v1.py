@@ -5,14 +5,14 @@ from datetime import date, datetime
 import pytest
 from pydantic import ValidationError
 
-from src.contracts.v1 import (
+from src.contracts.patient.v1 import (
     Encounter,
     Observation,
     ObservationComponent,
     Patient,
     PatientRecord,
 )
-from src.contracts.v1.common import Coding, Quantity, SourceReference
+from src.contracts.patient.v1.common import Coding, Quantity, SourceReference
 
 
 def test_patient_record_serializes_as_versioned_backend_contract() -> None:

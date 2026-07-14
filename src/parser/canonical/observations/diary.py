@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-from src.contracts.v1 import Observation
+from src.contracts.patient.v1 import Observation
 
 from ...normalizers import clean_text, valid_bp_pair, valid_number
 from ...records import as_mapping, first, records

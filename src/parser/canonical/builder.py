@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-from src.contracts.v1 import PatientRecord
+from src.contracts.patient.v1 import PatientRecord
 
 from .encounters import build_encounters
 from .history import build_history

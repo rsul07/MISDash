@@ -6,7 +6,7 @@ from datetime import date, datetime
 
 from pydantic import Field
 
-from src.contracts.v1.common import ContractModel
+from src.contracts.patient.v1.common import ContractModel
 
 from .common import CodeLabel
 

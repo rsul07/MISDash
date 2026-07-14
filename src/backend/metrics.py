@@ -5,8 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from src.contracts.dashboard.v1 import MetricPoint, MetricSeries
-from src.contracts.v1 import Observation, PatientRecord
-from src.contracts.v1.common import Coding, Quantity
+from src.contracts.patient.v1 import Observation, PatientRecord
+from src.contracts.patient.v1.common import Coding, Quantity
 
 from .common import chronological_key
 

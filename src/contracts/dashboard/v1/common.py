@@ -1,6 +1,6 @@
 """Shared value objects for DashboardResponse v1."""
 
-from src.contracts.v1.common import ContractModel
+from src.contracts.patient.v1.common import ContractModel
 
 
 class CodeLabel(ContractModel):

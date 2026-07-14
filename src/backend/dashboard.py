@@ -6,7 +6,7 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 
 from src.contracts.dashboard.v1 import DashboardResponse
-from src.contracts.v1 import PatientRecord
+from src.contracts.patient.v1 import PatientRecord
 from src.storage import load_patient_record
 
 from .metrics import build_metric_series

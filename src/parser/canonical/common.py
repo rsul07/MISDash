@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from src.contracts.v1.common import SourceReference
+from src.contracts.patient.v1.common import SourceReference
 
 from ..normalizers import clean_text
 

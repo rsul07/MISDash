@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from src.contracts.v1 import PatientRecord
+from src.contracts.patient.v1 import PatientRecord
 
 
 def load_patient_record(path: str | Path) -> PatientRecord:
