@@ -2,7 +2,8 @@
 
 ## Статус решения
 
-Принято для поэтапной реализации в ветке `feat/parser-backend`.
+Контракт v1 и MIS-адаптеры реализованы в ветке `feat/parser-backend`.
+`MISParser` сохраняет его как `patient_record.json` рядом с legacy-проекциями.
 
 ## Проблема текущего подхода
 
@@ -191,14 +192,14 @@ canonical/
 
 Старые `profile.json`, `vitals.csv` и `visits.csv` временно сохраняются как legacy dashboard projection.
 
-Порядок миграции:
+Состояние миграции:
 
-1. Добавить Pydantic-модели `PatientRecord v1` и contract-тесты.
-2. Реализовать небольшие адаптеры по доменам: patient, encounters, observations и clinical history.
-3. Начать сохранять `patient_record.json` вместе с текущими файлами.
-4. Добавить backend service, который строит `DashboardResponse v1` из `PatientRecord`.
-5. Перевести frontend на backend service.
-6. После миграции пометить три старых файла deprecated и удалить отдельной major-версией.
+1. ✅ Добавлены Pydantic-модели `PatientRecord v1` и contract-тесты.
+2. ✅ Реализованы небольшие адаптеры patient, encounters, observations и history.
+3. ✅ `patient_record.json` сохраняется вместе с текущими файлами.
+4. ⏳ Добавить backend service, который строит `DashboardResponse v1` из `PatientRecord`.
+5. ⏳ Перевести frontend на backend service.
+6. ⏳ После миграции пометить три старых файла deprecated и удалить отдельной major-версией.
 
 ## Правило сохранности данных
 

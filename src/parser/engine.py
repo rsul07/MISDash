@@ -14,6 +14,7 @@ from .constants import (
     VISITS_FIELDS,
     VITALS_FIELDS,
 )
+from .canonical.builder import build_patient_record
 from .extractors import extract_vitals_from_text
 from .normalizers import (
     normalize_date,
@@ -25,7 +26,7 @@ from .profile import build_profile
 from .records import as_mapping, first
 from .visits import build_visits
 from .vitals import build_vitals
-from .writers import write_csv, write_profile
+from .writers import write_csv, write_json, write_profile
 
 
 class MISParser:
@@ -60,16 +61,22 @@ class MISParser:
         profile = build_profile(data)
         visits = build_visits(data)
         vitals = build_vitals(data)
+        patient_record = build_patient_record(data)
 
         self.output_dir.mkdir(parents=True, exist_ok=True)
         paths = {
             "profile": self.output_dir / "profile.json",
             "vitals": self.output_dir / "vitals.csv",
             "visits": self.output_dir / "visits.csv",
+            "patient_record": self.output_dir / "patient_record.json",
         }
         write_profile(paths["profile"], profile)
         write_csv(paths["vitals"], VITALS_FIELDS, vitals)
         write_csv(paths["visits"], VISITS_FIELDS, visits)
+        write_json(
+            paths["patient_record"],
+            patient_record.model_dump(mode="json"),
+        )
         return paths
 
     def run(self) -> dict[str, Path]:

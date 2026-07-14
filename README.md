@@ -7,7 +7,7 @@
 ## Cтек
 - **Язык:** Python 3.10+
 - **Интерфейс:** Streamlit
-- **Анализ данных:** Pandas / regex
+- **Анализ данных:** Pydantic / Pandas / regex
 - **Тестирование:** Pytest
 - **Интеграция:** LLM API для суммаризации
 
@@ -18,6 +18,7 @@
 - `/tests` — юнит-тесты для проверки парсеров и медицинских формул.
 - `/src` — исходный код (парсер, калькуляторы, дашборд, модуль LLM).
     - `parser/` — подготовка и очистка исходных данных.
+    - `contracts/` — версионированные backend-модели данных.
     - `calculators/` — медицинские формулы и проверки.
     - `summarizer/` — работа с LLM для текста.
     - `app/` — веб-слой дашборда.
@@ -64,3 +65,16 @@
    ```bash
    pytest
    ```
+
+## Парсер
+
+```python
+from src.parser import MISParser
+
+paths = MISParser("data/patient_etalon.json").parse()
+print(paths["patient_record"])
+```
+
+Основной backend-контракт сохраняется в `patient_record.json`. Файлы
+`profile.json`, `vitals.csv` и `visits.csv` временно формируются рядом как
+legacy-проекции для совместимости текущего дашборда.

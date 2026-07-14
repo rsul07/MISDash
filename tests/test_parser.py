@@ -198,7 +198,7 @@ def test_parser_writes_contract_files_from_dirty_data(tmp_path: Path) -> None:
 
     paths = MISParser(source, output_dir=output).parse()
 
-    assert set(paths) == {"profile", "vitals", "visits"}
+    assert set(paths) == {"profile", "vitals", "visits", "patient_record"}
     assert all(path.is_file() for path in paths.values())
 
     profile = json.loads(paths["profile"].read_text(encoding="utf-8"))
@@ -231,6 +231,18 @@ def test_parser_writes_contract_files_from_dirty_data(tmp_path: Path) -> None:
     assert tuple(visits[0]) == VISITS_FIELDS
     assert len(visits) == 1
     assert visits[0]["complaints"] == "головная боль, тошнота; АД до 170/100"
+
+    patient_record = json.loads(
+        paths["patient_record"].read_text(encoding="utf-8")
+    )
+    assert patient_record["schema_version"] == "1.0"
+    assert patient_record["patient"]["full_name"] == "Иванов Иван Иванович"
+    assert len(patient_record["encounters"]) == 1
+    assert patient_record["encounters"][0]["history"] is None
+    assert patient_record["encounters"][0]["objective"].startswith("ЧСС 72")
+    assert patient_record["medications"][0]["name"] == "Лозартан"
+    assert len(patient_record["observations"]) == 8
+    assert len(patient_record["diagnostic_reports"]) == 1
 
 
 def test_missing_and_wrong_type_blocks_produce_empty_contracts(tmp_path: Path) -> None:
@@ -267,6 +279,12 @@ def test_missing_and_wrong_type_blocks_produce_empty_contracts(tmp_path: Path) -
         "chronic_diseases": [],
         "current_therapy": [],
     }
+    patient_record = json.loads(
+        paths["patient_record"].read_text(encoding="utf-8")
+    )
+    assert patient_record["patient"]["id"] == "patient"
+    assert patient_record["allergies"] == []
+    assert patient_record["observations"] == []
     assert paths["vitals"].read_text(encoding="utf-8").strip() == ",".join(
         VITALS_FIELDS
     )

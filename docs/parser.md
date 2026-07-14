@@ -2,7 +2,9 @@
 
 Модуль `src/parser` преобразует «грязную» JSON-выгрузку МИС в стабильные
 backend-контракты. Во время совместимой миграции `MISParser` продолжает
-формировать три legacy-проекции для дашборда:
+формировать полный `patient_record.json` и три legacy-проекции для дашборда:
+
+- `patient_record.json` — версионированная каноническая медицинская запись;
 
 - `profile.json` — карточка пациента;
 - `vitals.csv` — дневной временной ряд показателей;
@@ -18,6 +20,7 @@ paths = MISParser("data/patient_etalon.json").parse()
 print(paths["profile"])
 print(paths["vitals"])
 print(paths["visits"])
+print(paths["patient_record"])
 ```
 
 Метод `run()` является полным синонимом `parse()`.
@@ -35,7 +38,13 @@ flowchart LR
     Engine --> Profile[profile.py<br/>build_profile]
     Engine --> Visits[visits.py<br/>build_visits]
     Engine --> Vitals[vitals.py<br/>build_vitals]
+    Engine --> Builder[canonical/builder.py<br/>build_patient_record]
     Engine --> Writers[writers.py<br/>JSON и CSV]
+
+    Builder --> Patient[canonical/patient.py]
+    Builder --> Encounters[canonical/encounters.py]
+    Builder --> Observations[canonical/observations/]
+    Builder --> History[canonical/history.py]
 
     Profile --> Normalizers[normalizers.py<br/>даты, числа, текст]
     Profile --> Records[records.py<br/>безопасный доступ и дубли]
@@ -69,10 +78,11 @@ flowchart LR
 | `canonical/encounters.py` | Полные приёмы, основной/сопутствующие диагнозы и связанные назначения. |
 | `canonical/observations/` | Отдельные события дневника, лаборатории, приёмов и структурированного `vitals`; без дневной агрегации. |
 | `canonical/history.py` | Адаптация операций, госпитализаций, прививок и инструментальных отчётов. |
+| `canonical/builder.py` | Композиция доменных адаптеров в корневой `PatientRecord v1`. |
 
-Канонические адаптеры добавляются по доменам. Пока они не подключены к
-`MISParser.parse()`, набор возвращаемых файлов остаётся прежним; интеграция в
-`patient_record.json` выполняется отдельным этапом.
+Канонические адаптеры не зависят от legacy-сборщиков. `builder.py` только
+композирует их результаты, поэтому новый домен можно добавлять отдельным
+модулем без роста `engine.py`.
 
 ## 2. Последовательность выполнения
 
@@ -83,6 +93,7 @@ sequenceDiagram
     participant Profile as profile.py
     participant Visits as visits.py
     participant Vitals as vitals.py
+    participant Canonical as canonical/builder.py
     participant Writers as writers.py
     participant FS as Файловая система
 
@@ -101,6 +112,9 @@ sequenceDiagram
     Parser->>Vitals: build_vitals(data)
     Vitals-->>Parser: list дневных показателей
 
+    Parser->>Canonical: build_patient_record(data)
+    Canonical-->>Parser: PatientRecord v1
+
     Parser->>FS: создать OUTPUT_DIR
     Parser->>Writers: write_profile(...)
     Writers->>FS: profile.json
@@ -108,6 +122,8 @@ sequenceDiagram
     Writers->>FS: vitals.csv
     Parser->>Writers: write_csv(..., visits)
     Writers->>FS: visits.csv
+    Parser->>Writers: write_json(PatientRecord)
+    Writers->>FS: patient_record.json
     Parser-->>Client: dict[str, Path]
 ```
 
@@ -363,7 +379,16 @@ HR 72
 
 ## 9. Выходные контракты
 
-Порядок полей фиксирован в `constants.py` и не зависит от порядка исходного JSON.
+Основной контракт описан строгими моделями `src/contracts/v1`. Порядок полей
+legacy-файлов фиксирован в `constants.py` и не зависит от порядка исходного JSON.
+
+### `patient_record.json`
+
+Корень содержит `schema_version: "1.0"`, пациента и коллекции клинических
+событий: аллергии, состояния, назначения, приёмы, наблюдения, операции,
+госпитализации, прививки и диагностические отчёты. Каждое событие имеет
+детерминированный ID и `source` с происхождением записи. Точная схема и правила
+версий описаны в [контракте данных](data_contract.md).
 
 ### `profile.json`
 
@@ -428,6 +453,13 @@ date,doctor,specialty,diagnosis,complaints
 1. Создайте отдельный доменный сборщик `build_*`.
 2. Вызовите его из `MISParser.parse()`.
 3. Добавьте путь и writer в `engine.py`.
+
+### Добавить новый канонический домен
+
+1. Добавьте модели в подходящий модуль `src/contracts/v1/`.
+2. Создайте отдельный адаптер в `src/parser/canonical/`.
+3. Подключите результат только в `canonical/builder.py`.
+4. Обновите contract-тесты, тесты адаптера и эту документацию.
 4. Зафиксируйте схему в `constants.py` и документации.
 
 ## 12. Проверка
