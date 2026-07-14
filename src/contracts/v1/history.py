@@ -12,6 +12,7 @@ from .common import ClinicalDate, ClinicalEvent, Coding
 class Procedure(ClinicalEvent):
     coding: Coding
     performed_at: ClinicalDate | None = None
+    performed_at_text: str | None = None
     facility: str | None = None
     outcome: str | None = None
     note: str | None = None
@@ -20,7 +21,9 @@ class Procedure(ClinicalEvent):
 class Hospitalization(ClinicalEvent):
     facility: str | None = None
     admitted_at: ClinicalDate | None = None
+    admitted_at_text: str | None = None
     discharged_at: ClinicalDate | None = None
+    discharged_at_text: str | None = None
     diagnosis: Coding | None = None
     outcome: str | None = None
 
@@ -28,6 +31,7 @@ class Hospitalization(ClinicalEvent):
 class Immunization(ClinicalEvent):
     vaccine: str
     administered_at: ClinicalDate | None = None
+    administered_at_text: str | None = None
     lot_number: str | None = None
 
 
@@ -35,6 +39,7 @@ class DiagnosticReport(ClinicalEvent):
     category: Literal["laboratory", "instrumental"]
     coding: Coding
     effective_at: ClinicalDate | None = None
+    effective_at_text: str | None = None
     issued_at: ClinicalDate | None = None
     conclusion: str | None = None
     performer: str | None = None
