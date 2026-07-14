@@ -13,7 +13,12 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 if str(REPOSITORY_ROOT) not in sys.path:
     sys.path.insert(0, str(REPOSITORY_ROOT))
 
-from src.app.components import render_metrics, render_patient_card
+from src.app.components import (
+    render_insights,
+    render_metrics,
+    render_patient_card,
+    render_visits,
+)
 from src.app.data import build_dashboard
 
 
@@ -34,3 +39,5 @@ else:
         st.success("Данные пациента успешно обработаны.")
         render_patient_card(dashboard)
         render_metrics(dashboard)
+        render_visits(dashboard)
+        render_insights(dashboard)
