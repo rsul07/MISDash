@@ -43,5 +43,8 @@ class DiagnosticReport(ClinicalEvent):
     issued_at: ClinicalDate | None = None
     conclusion: str | None = None
     performer: str | None = None
+    facility: str | None = None
+    specimen: str | None = None
+    device: str | None = None
     observation_ids: list[str] = Field(default_factory=list)
     status: str | None = None

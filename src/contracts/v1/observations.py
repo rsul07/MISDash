@@ -40,6 +40,9 @@ class Observation(ClinicalEvent):
     reference_range: ReferenceRange | None = None
     interpretation: str | None = None
     method: str | None = None
+    device: str | None = None
+    body_site: str | None = None
+    context: dict[str, str] = Field(default_factory=dict)
     status: str | None = None
     encounter_id: str | None = None
     report_id: str | None = None

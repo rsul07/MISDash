@@ -147,6 +147,7 @@ def _build_instrumental_reports(data: Mapping[str, Any]) -> list[DiagnosticRepor
                 or None,
                 performer=clean_text(first(item, "vrach_fd", "performer", "doctor"))
                 or None,
+                device=clean_text(first(item, "apparat", "device")) or None,
                 status=clean_text(first(item, "status", "report_status")) or None,
             )
         )

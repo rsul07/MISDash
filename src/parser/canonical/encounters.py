@@ -34,7 +34,7 @@ def build_encounters(data: Mapping[str, Any]) -> EncounterBundle:
     medications: list[Medication] = []
     for index, visit in enumerate(unique_visits(source)):
         source_id = first(visit, "id_priema", "visit_id", "appointment_id", "id")
-        encounter_id = _encounter_id(index, source_id)
+        encounter_id = canonical_encounter_id(index, source_id)
         visit_medications = _build_medications(visit, index, encounter_id)
         medications.extend(visit_medications)
         follow_up_raw = first(visit, "sled_yavka", "follow_up_at", "next_visit")
@@ -85,7 +85,7 @@ def build_encounters(data: Mapping[str, Any]) -> EncounterBundle:
     return EncounterBundle(encounters=encounters, medications=medications)
 
 
-def _encounter_id(index: int, source_id: Any) -> str:
+def canonical_encounter_id(index: int, source_id: Any) -> str:
     normalized = clean_text(source_id)
     if normalized:
         normalized = re.sub(
