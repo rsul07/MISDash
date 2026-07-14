@@ -21,10 +21,13 @@ class Encounter(ClinicalEvent):
     occurred_at: ClinicalDate | None = None
     practitioner: Practitioner = Field(default_factory=Practitioner)
     encounter_type: str | None = None
+    location: str | None = None
     complaints: str | None = None
     history: str | None = None
     objective: str | None = None
     diagnoses: list[Diagnosis] = Field(default_factory=list)
     plan: str | None = None
+    follow_up_at: ClinicalDate | None = None
+    follow_up_at_text: str | None = None
     medication_ids: list[str] = Field(default_factory=list)
     status: str | None = None
