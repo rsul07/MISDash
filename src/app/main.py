@@ -14,6 +14,7 @@ if str(REPOSITORY_ROOT) not in sys.path:
     sys.path.insert(0, str(REPOSITORY_ROOT))
 
 from src.app.data import build_dashboard
+from src.app.components import render_patient_card
 
 
 st.set_page_config(page_title="Пациент за 30 секунд")
@@ -31,4 +32,4 @@ else:
         st.error(f"Не удалось обработать файл: {error}")
     else:
         st.success("Данные пациента успешно обработаны.")
-        st.write(dashboard.patient.full_name or "Имя пациента не указано")
+        render_patient_card(dashboard)
