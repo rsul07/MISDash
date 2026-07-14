@@ -7,7 +7,7 @@
 ## Cтек
 - **Язык:** Python 3.10+
 - **Интерфейс:** Streamlit
-- **Анализ данных:** Pandas / regex
+- **Анализ данных:** Pydantic / Pandas / regex
 - **Тестирование:** Pytest
 - **Интеграция:** LLM API для суммаризации
 
@@ -18,9 +18,21 @@
 - `/tests` — юнит-тесты для проверки парсеров и медицинских формул.
 - `/src` — исходный код (парсер, калькуляторы, дашборд, модуль LLM).
     - `parser/` — подготовка и очистка исходных данных.
+    - `contracts/` — версионированные backend-модели данных.
+    - `storage/` — чтение и атомарная запись канонических контрактов.
+    - `backend/` — frontend-проекции из `PatientRecord`.
     - `calculators/` — медицинские формулы и проверки.
     - `summarizer/` — работа с LLM для текста.
     - `app/` — веб-слой дашборда.
+
+## Документация
+
+- [Техническое задание](docs/ts.md)
+- [Регламент командной работы](docs/workflow.md)
+- [Архитектура и работа модуля parser](docs/parser.md)
+- [Backend-driven контракт данных](docs/data_contract.md)
+- [Backend service и DashboardResponse v1](docs/backend.md)
+- [Frontend handoff: Streamlit MVP с Codex](docs/frontend_handoff.md)
 
 ## Быстрый старт
 
@@ -57,3 +69,24 @@
    ```bash
    pytest
    ```
+
+## Парсер
+
+```python
+from src.parser import MISParser
+
+record = MISParser("data/patient_etalon.json").parse_record()
+```
+
+Parser возвращает единственный канонический контракт `PatientRecord`. Для
+сохранения в `patient_record.json` используйте `parse()` вместо
+`parse_record()`.
+
+Backend-проекция для frontend строится только из канонического контракта:
+
+```python
+from src.backend import DashboardService
+
+dashboard = DashboardService().build(record)
+payload = dashboard.model_dump(mode="json")
+```

@@ -1,0 +1,173 @@
+# Модуль `parser`: устройство и поток данных
+
+`src/parser` преобразует грязную JSON-выгрузку МИС в единственный
+канонический контракт `PatientRecord v1`. Parser не строит представления
+конкретного экрана и не выполняет необратимую дневную агрегацию.
+
+## Публичный API
+
+Основной сценарий работает без промежуточного файла:
+
+```python
+from src.parser import MISParser
+
+record = MISParser("data/patient_etalon.json").parse_record()
+```
+
+Если каноническую запись нужно сохранить:
+
+```python
+paths = MISParser("data/patient_etalon.json").parse()
+print(paths["patient_record"])
+```
+
+`parse()` сохраняет только `patient_record.json`. `run()` является его
+командным алиасом. Выходная директория выбирается в порядке:
+
+1. аргумент `output_dir`;
+2. переменная окружения `OUTPUT_DIR`;
+3. `data/processed/`.
+
+## Архитектура
+
+```mermaid
+flowchart LR
+    JSON[Грязный JSON МИС] --> Engine[engine.py<br/>MISParser]
+    Engine --> Builder[canonical/builder.py]
+    Builder --> Patient[patient.py]
+    Builder --> Social[social.py]
+    Builder --> Encounters[encounters.py]
+    Builder --> Observations[observations/]
+    Builder --> History[history.py]
+    Patient --> Record[PatientRecord v1]
+    Social --> Record
+    Encounters --> Record
+    Observations --> Record
+    History --> Record
+    Record --> Backend[DashboardService]
+    Record -. parse() .-> Storage[src/storage]
+    Storage --> JSONOut[patient_record.json]
+```
+
+`engine.py` — тонкий фасад. Вся mapping-логика разделена по клиническим
+доменам и композируется только в `canonical/builder.py`.
+
+### Ответственность модулей
+
+| Модуль | Ответственность |
+|---|---|
+| `engine.py` | Загрузка исходного JSON, выбор `data`/корня, запуск canonical builder. |
+| `constants.py` | Маркеры пропусков, подсказки для распознавания коллекций, default output path. |
+| `normalizers.py` | Даты, числа, текст и физиологическая валидация. |
+| `records.py` | Безопасный доступ, альтернативные имена, keyed-коллекции, дубли приёмов. |
+| `extractors.py` | Детерминированное извлечение АД и ЧСС из текста. |
+| `canonical/patient.py` | Пациент, аллергии и хронические состояния. |
+| `canonical/social.py` | Образ жизни и семейный анамнез. |
+| `canonical/encounters.py` | Полные приёмы, диагнозы и назначения. |
+| `canonical/observations/` | Дневник, лаборатория, измерения приёмов и structured vitals. |
+| `canonical/history.py` | Операции, госпитализации, прививки и инструментальные отчёты. |
+| `canonical/builder.py` | Сборка корневого `PatientRecord`. |
+| `src/storage/patient_records.py` | Валидация и атомарная запись канонического JSON для `parse()`. |
+
+## Последовательность выполнения
+
+```mermaid
+sequenceDiagram
+    actor Client as Клиент
+    participant Parser as MISParser
+    participant Builder as canonical/builder.py
+    participant Contract as PatientRecord v1
+    participant FS as Файловая система
+
+    Client->>Parser: parse_record()
+    Parser->>FS: прочитать UTF-8/UTF-8 BOM JSON
+    Parser->>Parser: выбрать payload.data или payload
+    Parser->>Builder: build_patient_record(data)
+    Builder->>Contract: валидировать доменные модели
+    Contract-->>Client: PatientRecord
+
+    opt parse() вместо parse_record()
+        Parser->>FS: атомарно сохранить patient_record.json через storage
+        Parser-->>Client: {patient_record: Path}
+    end
+```
+
+## Отказоустойчивый обход
+
+`records.first()` ищет первое содержательное значение по нескольким aliases и
+никогда не использует обязательный доступ `mapping[key]`. `records.records()`
+понимает и обычные массивы, и коллекции, индексированные ключами:
+
+```json
+{"v1": {"id_priema": "v1"}, "v2": {"id_priema": "v2"}}
+```
+
+Отсутствующий или неверно типизированный блок даёт пустую коллекцию/значение,
+но не `KeyError` или `AttributeError`. Синтаксически неверный JSON остаётся
+явной ошибкой `ValueError`, а инфраструктурные ошибки не маскируются.
+
+## Нормализация
+
+Даты поддерживают ISO, `DD.MM.YYYY`, `DD/MM/YYYY`, `YYYYMMDD`, варианты со
+временем и Unix timestamp. Canonical adapter сохраняет `datetime`, если время
+известно. Неполный год вроде `2017` не превращается в искусственное
+`2017-01-01`; исходный текст сохраняется рядом.
+
+Числа принимаются как `int`, `float` или строки с точкой/запятой. Булевы,
+бесконечные и составные строки числами не считаются.
+`NaN` и бесконечности также считаются пропусками при выборе fallback alias.
+
+```python
+from src.parser.engine import normalize_date, parse_number
+
+normalize_date("14.03.1967")  # "1967-03-14"
+parse_number("46,5")          # 46.5
+```
+
+## Дубли приёмов
+
+`records.unique_visits()` считает ID с суффиксами `_dup`/`-dup` одной
+логической записью. Более полная запись становится основной, а отсутствующие
+части дополняются из дубля. При отсутствии ID используется составной признак
+из даты, врача, диагноза и жалоб.
+
+## Наблюдения
+
+Каждое валидное измерение остаётся отдельным `Observation` с точной датой,
+единицей, источником и связями. АД хранится компонентами systolic/diastolic;
+пульс — отдельным событием. Лабораторные результаты сохраняют референсы,
+флаги, метод, статус, биоматериал и связь с `DiagnosticReport`.
+
+Regex для свободного текста используется как fallback после структурированных
+полей. Систолическое и диастолическое давление никогда не смешиваются из
+разных фрагментов.
+
+## Выходной контракт
+
+Корень `PatientRecord` содержит `schema_version: "1.0"`, пациента и коллекции
+клинических событий. Pydantic-модели запрещают неизвестные поля, поэтому сырые
+ключи МИС не могут случайно стать частью backend API. Полная схема описана в
+[контракте данных](data_contract.md).
+
+## Как расширять parser
+
+При добавлении нового клинического домена:
+
+1. расширить соответствующие модели в `src/contracts/patient/v1/`;
+2. создать отдельный адаптер в `src/parser/canonical/`;
+3. подключить его только в `canonical/builder.py`;
+4. добавить contract-тесты и тесты грязных форм входа;
+5. обновить этот документ и `docs/data_contract.md`.
+
+Новое альтернативное имя поля добавляется рядом с текущими aliases в
+соответствующем adapter. Новый формат даты добавляется в normalizer с
+параметризованным тестом.
+
+## Проверка
+
+```bash
+pytest -q
+```
+
+Тесты покрывают контракты, форматы дат/чисел, regex, неправильные типы,
+keyed-коллекции, дубли, все canonical adapters и полный parser pipeline.
