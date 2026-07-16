@@ -32,7 +32,6 @@
 - [Архитектура и работа модуля parser](docs/parser.md)
 - [Backend-driven контракт данных](docs/data_contract.md)
 - [Backend service и DashboardResponse v1](docs/backend.md)
-- [Frontend handoff: Streamlit MVP с Codex](docs/frontend_handoff.md)
 
 ## Быстрый старт
 
@@ -82,11 +81,6 @@
    Веб-слой передает загруженный файл публичным фасадам `MISParser` и
    `DashboardService` и отображает только `DashboardResponse v1`; исходные поля
    МИС и canonical adapters во frontend не используются.
-
-Графики динамики разделены на клинические вкладки. Streamlit лениво строит
-только выбранную группу, чтобы не превышать браузерный лимит WebGL-контекстов.
-Для плотных рядов по умолчанию показан последний год; кнопки над графиком
-переключают интервалы `1 год`, `3 года` и `Всё`.
 
 ### Ограничения frontend MVP
 
