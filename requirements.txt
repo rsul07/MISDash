@@ -12,5 +12,8 @@ pydantic
 # Работа с окружением
 python-dotenv
 
+# LLM-суммаризация
+google-genai
+
 # Тестирование
 pytest
