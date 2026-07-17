@@ -54,9 +54,7 @@ class GeminiSummaryClient:
                 store=False,
             )
         except Exception as error:
-            raise SummaryProviderError(
-                "Gemini API временно недоступен или исчерпана квота."
-            ) from error
+            raise _provider_error(error, self.model) from error
 
         output_text = getattr(interaction, "output_text", None)
         if not isinstance(output_text, str) or not output_text.strip():
@@ -67,3 +65,28 @@ class GeminiSummaryClient:
             raise InvalidSummaryError(
                 "Gemini вернул ответ, не соответствующий контракту сводки."
             ) from error
+
+
+def _provider_error(error: Exception, model: str) -> SummaryProviderError:
+    """Translate provider failures without exposing secrets or raw responses."""
+
+    status = getattr(error, "status_code", None) or getattr(error, "code", None)
+    details = str(error).casefold()
+    if status == 404 or "not_found" in details or "not found" in details:
+        return SummaryProviderError(
+            f"Модель Gemini '{model}' недоступна для этого проекта. "
+            "Проверьте GEMINI_MODEL в .env."
+        )
+    if status in {400, 401, 403} and (
+        "api key" in details or "permission" in details or status in {401, 403}
+    ):
+        return SummaryProviderError(
+            "Gemini отклонил API-ключ или проект не имеет доступа к модели."
+        )
+    if status == 429 or "resource_exhausted" in details or "quota" in details:
+        return SummaryProviderError(
+            "Исчерпана квота Gemini API. Проверьте лимиты проекта в AI Studio."
+        )
+    return SummaryProviderError(
+        "Не удалось выполнить запрос к Gemini API. Проверьте сеть и повторите позже."
+    )

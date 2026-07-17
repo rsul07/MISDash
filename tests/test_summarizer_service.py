@@ -12,12 +12,14 @@ from src.contracts.patient.v1 import Condition, Patient, PatientRecord
 from src.contracts.patient.v1.common import Coding, SourceReference
 from src.summarizer import (
     ClinicalSummary,
+    DEFAULT_GEMINI_MODEL,
     GeminiSummaryClient,
     InsufficientClinicalDataError,
     InvalidSummaryError,
     MissingApiKeyError,
     SummaryContext,
     SummaryItem,
+    SummaryProviderError,
     SummaryService,
     SummarySettings,
     format_summary,
@@ -155,6 +157,38 @@ def test_gemini_client_rejects_invalid_json() -> None:
 def test_missing_key_is_reported_before_sdk_initialization() -> None:
     with pytest.raises(MissingApiKeyError, match="GEMINI_API_KEY"):
         GeminiSummaryClient.from_settings(SummarySettings(api_key=None))
+
+
+def test_current_default_model_is_used() -> None:
+    assert DEFAULT_GEMINI_MODEL == "gemini-3.1-flash-lite"
+
+
+@pytest.mark.parametrize(
+    ("status_code", "message"),
+    (
+        (404, "GEMINI_MODEL"),
+        (401, "API-ключ"),
+        (429, "квота"),
+    ),
+)
+def test_gemini_client_explains_provider_errors(
+    status_code: int,
+    message: str,
+) -> None:
+    class ProviderFailure(Exception):
+        def __init__(self) -> None:
+            super().__init__("provider failure")
+            self.status_code = status_code
+
+    def fail(**kwargs):
+        raise ProviderFailure()
+
+    sdk_client = SimpleNamespace(interactions=SimpleNamespace(create=fail))
+
+    with pytest.raises(SummaryProviderError, match=message):
+        GeminiSummaryClient(model="gemini-test", sdk_client=sdk_client).generate(
+            SummaryContext()
+        )
 
 
 def test_formatter_preserves_contract_sections() -> None:
