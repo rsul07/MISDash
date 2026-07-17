@@ -44,29 +44,33 @@ def _keep_traceable_items(
     summary: ClinicalSummary,
     context: SummaryContext,
 ) -> ClinicalSummary:
-    source_ids = context.source_ids
+    facts_by_id = {fact.source_id: fact for fact in context.facts}
 
     def valid(items: list[SummaryItem]) -> list[SummaryItem]:
-        return [
-            item
-            for item in items
-            if item.source_ids and set(item.source_ids).issubset(source_ids)
-        ]
+        result: list[SummaryItem] = []
+        for item in items:
+            facts = [facts_by_id.get(source_id) for source_id in item.source_ids]
+            if not facts or any(fact is None for fact in facts):
+                continue
+            if all(fact.visible_on_dashboard for fact in facts if fact is not None):
+                continue
+            result.append(item)
+        return result
 
     return ClinicalSummary(
-        diagnoses=valid(summary.diagnoses),
-        therapy=valid(summary.therapy),
-        dynamics=valid(summary.dynamics),
-        next_visit_priorities=valid(summary.next_visit_priorities),
+        recent_changes=valid(summary.recent_changes),
+        important_findings=valid(summary.important_findings),
+        unresolved_issues=valid(summary.unresolved_issues),
+        next_visit_focus=valid(summary.next_visit_focus),
     )
 
 
 def _has_items(summary: ClinicalSummary) -> bool:
     return any(
         (
-            summary.diagnoses,
-            summary.therapy,
-            summary.dynamics,
-            summary.next_visit_priorities,
+            summary.recent_changes,
+            summary.important_findings,
+            summary.unresolved_issues,
+            summary.next_visit_focus,
         )
     )

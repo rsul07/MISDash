@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from dotenv import load_dotenv
 
 
-DEFAULT_GEMINI_MODEL = "gemini-3.1-flash-lite"
+DEFAULT_GEMINI_MODEL = "gemini-3.5-flash"
 
 
 @dataclass(frozen=True)

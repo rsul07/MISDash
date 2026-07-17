@@ -26,6 +26,7 @@ class ContextFact(ContractModel):
     kind: FactKind
     occurred_at: str | None = None
     text: str = Field(min_length=1)
+    visible_on_dashboard: bool = False
 
 
 class SummaryContext(ContractModel):
@@ -43,14 +44,30 @@ class SummaryContext(ContractModel):
 class SummaryItem(ContractModel):
     """A concise clinical statement backed by context source identifiers."""
 
-    text: str = Field(min_length=1)
-    source_ids: list[str] = Field(min_length=1)
+    text: str = Field(min_length=1, max_length=400)
+    source_ids: list[str] = Field(min_length=1, max_length=3)
 
 
 class ClinicalSummary(ContractModel):
-    """Structured result required by the dashboard and technical assignment."""
+    """Non-duplicating insights that add information to the dashboard."""
 
-    diagnoses: list[SummaryItem] = Field(default_factory=list)
-    therapy: list[SummaryItem] = Field(default_factory=list)
-    dynamics: list[SummaryItem] = Field(default_factory=list)
-    next_visit_priorities: list[SummaryItem] = Field(default_factory=list)
+    recent_changes: list[SummaryItem] = Field(
+        default_factory=list,
+        max_length=3,
+        description="Dated clinical or metric changes, not static diagnoses.",
+    )
+    important_findings: list[SummaryItem] = Field(
+        default_factory=list,
+        max_length=3,
+        description="Important free-text findings not already visible on the dashboard.",
+    )
+    unresolved_issues: list[SummaryItem] = Field(
+        default_factory=list,
+        max_length=3,
+        description="Explicitly documented unresolved issues or follow-up needs.",
+    )
+    next_visit_focus: list[SummaryItem] = Field(
+        default_factory=list,
+        max_length=3,
+        description="Dated plan items to verify at the next visit, not new advice.",
+    )

@@ -29,8 +29,8 @@ class FakeService:
     def summarize(self, record, dashboard) -> ClinicalSummary:
         self.calls += 1
         return ClinicalSummary(
-            diagnoses=[
-                SummaryItem(text="Гипертензия", source_ids=["condition:0"])
+            important_findings=[
+                SummaryItem(text="Важная находка", source_ids=["encounter:1"])
             ]
         )
 
@@ -89,7 +89,7 @@ def test_summary_is_generated_once_and_survives_rerun(
     )
 
     assert service.calls == 1
-    assert first.ai_summary == "### Диагнозы\n\n- Гипертензия"
+    assert first.ai_summary == "### Неочевидные находки\n\n- Важная находка"
     assert second.ai_summary == first.ai_summary
     assert streamlit.button.call_args_list[1].args[0] == "Сформировать заново"
 

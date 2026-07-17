@@ -6,6 +6,7 @@ from datetime import date, datetime, timezone
 
 from src.backend import DashboardService
 from src.contracts.patient.v1 import (
+    Condition,
     DiagnosticReport,
     Encounter,
     Observation,
@@ -50,6 +51,28 @@ def test_context_is_empty_without_clinical_data() -> None:
 
     assert context.facts == []
     assert context.source_ids == set()
+
+
+def test_context_marks_dashboard_facts_as_already_visible() -> None:
+    record = PatientRecord(
+        patient=Patient(
+            id="patient-1",
+            full_name="Synthetic Patient",
+            source=SOURCE,
+        ),
+        conditions=[
+            Condition(
+                id="condition-1",
+                source=SOURCE,
+                coding=Coding(code="I10", display="Гипертензия"),
+            )
+        ],
+    )
+
+    context = build_summary_context(record, DashboardService().build(record))
+
+    assert context.facts[0].source_id == "condition:0"
+    assert context.facts[0].visible_on_dashboard is True
 
 
 def test_context_limits_records_and_truncates_free_text() -> None:
@@ -110,7 +133,9 @@ def test_context_sends_metric_summary_instead_of_raw_observations() -> None:
     assert len(context.facts) == 1
     metric = context.facts[0]
     assert metric.source_id == "metric:glucose"
-    assert "первое значение: 5 mmol/L от 2024-01-01" in metric.text
+    assert metric.visible_on_dashboard is False
     assert "последнее значение: 6.5 mmol/L от 2025-01-01" in metric.text
-    assert "изменение: +1.5 mmol/L" in metric.text
+    assert "среднее за последние 12 месяцев: 6.50 mmol/L" in metric.text
+    assert "среднее за предыдущие 12 месяцев: 5.00 mmol/L" in metric.text
+    assert "изменение средних: +1.50 mmol/L" in metric.text
     assert "glucose-0" not in metric.text

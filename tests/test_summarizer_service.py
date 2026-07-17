@@ -6,9 +6,10 @@ from datetime import datetime, timezone
 from types import SimpleNamespace
 
 import pytest
+from pydantic import ValidationError
 
 from src.backend import DashboardService
-from src.contracts.patient.v1 import Condition, Patient, PatientRecord
+from src.contracts.patient.v1 import Condition, Encounter, Patient, PatientRecord
 from src.contracts.patient.v1.common import Coding, SourceReference
 from src.summarizer import (
     ClinicalSummary,
@@ -39,7 +40,11 @@ class FakeSummaryClient:
         return self.result
 
 
-def _record(*, with_condition: bool = True) -> PatientRecord:
+def _record(
+    *,
+    with_condition: bool = True,
+    with_encounter: bool = False,
+) -> PatientRecord:
     conditions = []
     if with_condition:
         conditions.append(
@@ -52,6 +57,17 @@ def _record(*, with_condition: bool = True) -> PatientRecord:
     return PatientRecord(
         patient=Patient(id="patient-1", full_name="Synthetic", source=SOURCE),
         conditions=conditions,
+        encounters=(
+            [
+                Encounter(
+                    id="visit-1",
+                    source=SOURCE,
+                    complaints="Утомляемость",
+                )
+            ]
+            if with_encounter
+            else []
+        ),
     )
 
 
@@ -62,24 +78,28 @@ def _dashboard(record: PatientRecord):
     )
 
 
-def test_service_keeps_only_items_with_known_sources() -> None:
+def test_service_keeps_only_new_items_with_known_sources() -> None:
     client = FakeSummaryClient(
         ClinicalSummary(
-            diagnoses=[
+            important_findings=[
+                SummaryItem(
+                    text="На последнем приёме отмечена утомляемость.",
+                    source_ids=["encounter:visit-1"],
+                ),
                 SummaryItem(
                     text="Артериальная гипертензия.",
                     source_ids=["condition:0"],
                 ),
-                SummaryItem(text="Выдуманный диагноз.", source_ids=["missing:1"]),
+                SummaryItem(text="Выдуманная находка.", source_ids=["missing:1"]),
             ]
         )
     )
-    record = _record()
+    record = _record(with_encounter=True)
 
     summary = SummaryService(client).summarize(record, _dashboard(record))
 
-    assert [item.text for item in summary.diagnoses] == [
-        "Артериальная гипертензия."
+    assert [item.text for item in summary.important_findings] == [
+        "На последнем приёме отмечена утомляемость."
     ]
     assert client.calls == 1
 
@@ -97,7 +117,9 @@ def test_service_does_not_call_provider_for_empty_context() -> None:
 def test_service_rejects_response_without_traceable_items() -> None:
     client = FakeSummaryClient(
         ClinicalSummary(
-            diagnoses=[SummaryItem(text="Нет источника", source_ids=["missing:1"])]
+            important_findings=[
+                SummaryItem(text="Нет источника", source_ids=["missing:1"])
+            ]
         )
     )
     record = _record()
@@ -108,7 +130,9 @@ def test_service_rejects_response_without_traceable_items() -> None:
 
 def test_gemini_client_requests_structured_output_and_parses_it() -> None:
     output = ClinicalSummary(
-        diagnoses=[SummaryItem(text="Гипертензия", source_ids=["condition:0"])]
+        important_findings=[
+            SummaryItem(text="Находка", source_ids=["condition:0"])
+        ]
     )
     calls: list[dict[str, object]] = []
 
@@ -154,13 +178,23 @@ def test_gemini_client_rejects_invalid_json() -> None:
         )
 
 
+def test_summary_limits_each_section_to_three_items() -> None:
+    items = [
+        SummaryItem(text=f"Изменение {index}", source_ids=[f"metric:{index}"])
+        for index in range(4)
+    ]
+
+    with pytest.raises(ValidationError):
+        ClinicalSummary(recent_changes=items)
+
+
 def test_missing_key_is_reported_before_sdk_initialization() -> None:
     with pytest.raises(MissingApiKeyError, match="GEMINI_API_KEY"):
         GeminiSummaryClient.from_settings(SummarySettings(api_key=None))
 
 
 def test_current_default_model_is_used() -> None:
-    assert DEFAULT_GEMINI_MODEL == "gemini-3.1-flash-lite"
+    assert DEFAULT_GEMINI_MODEL == "gemini-3.5-flash"
 
 
 @pytest.mark.parametrize(
@@ -194,13 +228,18 @@ def test_gemini_client_explains_provider_errors(
 def test_formatter_preserves_contract_sections() -> None:
     markdown = format_summary(
         ClinicalSummary(
-            diagnoses=[SummaryItem(text="Гипертензия", source_ids=["condition:0"])],
-            next_visit_priorities=[
-                SummaryItem(text="Уточнить терапию", source_ids=["condition:0"])
+            recent_changes=[
+                SummaryItem(text="HbA1c вырос", source_ids=["metric:hba1c"])
+            ],
+            next_visit_focus=[
+                SummaryItem(
+                    text="В плане от 2026-01-01 указан контроль HbA1c",
+                    source_ids=["encounter:1"],
+                )
             ],
         )
     )
 
-    assert "### Диагнозы\n\n- Гипертензия" in markdown
-    assert "### Важно на ближайшем приёме\n\n- Уточнить терапию" in markdown
+    assert "### Что изменилось\n\n- HbA1c вырос" in markdown
+    assert "### К ближайшему приёму" in markdown
     assert "condition:0" not in markdown

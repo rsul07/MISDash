@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import Iterable
 
 from src.contracts.dashboard.v1 import DashboardResponse, MetricSeries
@@ -48,6 +48,7 @@ class _ContextBuilder:
         parts: Iterable[tuple[str, object]],
         *,
         occurred_at: date | datetime | None = None,
+        visible_on_dashboard: bool = False,
     ) -> None:
         text_parts: list[str] = []
         for label, value in parts:
@@ -61,6 +62,7 @@ class _ContextBuilder:
             kind=kind,
             occurred_at=_iso_date(occurred_at),
             text="; ".join(text_parts),
+            visible_on_dashboard=visible_on_dashboard,
         )
         fact_size = len(fact.source_id) + len(fact.text) + len(fact.occurred_at or "")
         if self._used_characters + fact_size > self.limits.total_characters:
@@ -93,6 +95,7 @@ def build_summary_context(
             f"allergy:{index}",
             "allergy",
             (("аллерген", allergy.agent), ("реакция", allergy.reaction)),
+            visible_on_dashboard=True,
         )
 
     for index, condition in enumerate(dashboard.conditions):
@@ -105,6 +108,7 @@ def build_summary_context(
                 ("стадия", condition.stage),
                 ("статус", condition.clinical_status),
             ),
+            visible_on_dashboard=True,
         )
 
     for index, medication in enumerate(dashboard.current_medications):
@@ -117,6 +121,7 @@ def build_summary_context(
                 ("частота", medication.frequency),
                 ("форма", medication.form),
             ),
+            visible_on_dashboard=True,
         )
 
     encounters = sorted(record.encounters, key=_encounter_key, reverse=True)
@@ -186,20 +191,44 @@ def _add_metric(builder: _ContextBuilder, metric: MetricSeries) -> None:
     if not metric.points:
         return
     points = sorted(metric.points, key=lambda item: _date_key(item.observed_at))
-    first = points[0]
     latest = points[-1]
-    delta = latest.value - first.value
+    latest_date = _as_date(latest.observed_at)
+    recent_start = latest_date - timedelta(days=365)
+    previous_start = latest_date - timedelta(days=730)
+    recent = [
+        point
+        for point in points
+        if recent_start < _as_date(point.observed_at) <= latest_date
+    ]
+    previous = [
+        point
+        for point in points
+        if previous_start < _as_date(point.observed_at) <= recent_start
+    ]
     unit = f" {metric.unit}" if metric.unit else ""
+    parts: list[tuple[str, object]] = [
+        ("показатель", metric.display),
+        ("последнее значение", f"{latest.value:g}{unit} от {_iso_date(latest.observed_at)}"),
+        ("измерений за последние 12 месяцев", len(recent)),
+    ]
+    if recent and previous:
+        recent_mean = sum(point.value for point in recent) / len(recent)
+        previous_mean = sum(point.value for point in previous) / len(previous)
+        delta = recent_mean - previous_mean
+        parts.extend(
+            (
+                ("среднее за последние 12 месяцев", f"{recent_mean:.2f}{unit}"),
+                ("среднее за предыдущие 12 месяцев", f"{previous_mean:.2f}{unit}"),
+                ("изменение средних", f"{delta:+.2f}{unit}"),
+                ("измерений в предыдущем периоде", len(previous)),
+            )
+        )
+    else:
+        parts.append(("сравнение периодов", "недостаточно данных"))
     builder.add(
         f"metric:{metric.code}",
         "metric",
-        (
-            ("показатель", metric.display),
-            ("первое значение", f"{first.value:g}{unit} от {_iso_date(first.observed_at)}"),
-            ("последнее значение", f"{latest.value:g}{unit} от {_iso_date(latest.observed_at)}"),
-            ("изменение", f"{delta:+g}{unit}"),
-            ("число измерений", len(points)),
-        ),
+        parts,
     )
 
 
@@ -219,3 +248,7 @@ def _iso_date(value: date | datetime | None) -> str | None:
     if value is None:
         return None
     return value.isoformat()
+
+
+def _as_date(value: date | datetime) -> date:
+    return value.date() if isinstance(value, datetime) else value

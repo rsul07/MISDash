@@ -6,10 +6,10 @@ from .models import ClinicalSummary, SummaryItem
 
 
 _SECTIONS = (
-    ("Диагнозы", "diagnoses"),
-    ("Текущая терапия", "therapy"),
-    ("Динамика", "dynamics"),
-    ("Важно на ближайшем приёме", "next_visit_priorities"),
+    ("Что изменилось", "recent_changes"),
+    ("Неочевидные находки", "important_findings"),
+    ("Нерешённые вопросы", "unresolved_issues"),
+    ("К ближайшему приёму", "next_visit_focus"),
 )
 
 
