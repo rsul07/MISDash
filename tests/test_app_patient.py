@@ -19,9 +19,8 @@ def test_patient_card_renders_profile_and_clinical_lists(
     monkeypatch,
 ) -> None:
     streamlit = MagicMock()
-    metric_columns = [MagicMock() for _ in range(5)]
-    section_columns = [MagicMock() for _ in range(3)]
-    streamlit.columns.side_effect = [metric_columns, section_columns]
+    metric_columns = [MagicMock() for _ in range(2)]
+    streamlit.columns.return_value = metric_columns
     monkeypatch.setattr(component, "st", streamlit)
 
     component.render_patient_card(
@@ -51,13 +50,16 @@ def test_patient_card_renders_profile_and_clinical_lists(
 
     streamlit.header.assert_called_once_with("Иванов Иван Иванович")
     streamlit.caption.assert_called_once_with("Краткая информация о пациенте")
-    metric_columns[0].metric.assert_called_once_with("Возраст", "46 лет")
-    metric_columns[1].metric.assert_called_once_with("Пол", "М")
-    metric_columns[2].metric.assert_called_once_with("Группа крови", "A(II) Rh+")
-    metric_columns[3].metric.assert_called_once_with("BMI", "27.8")
-    metric_columns[4].metric.assert_called_once_with("Вес", "90.0 кг")
+    assert metric_columns[0].metric.call_args_list[0].args == ("Возраст", "46 лет")
+    assert metric_columns[0].metric.call_args_list[1].args == ("Пол", "М")
+    assert metric_columns[0].metric.call_args_list[2].args == (
+        "Группа крови",
+        "A(II) Rh+",
+    )
+    metric_columns[1].metric.assert_any_call("BMI", "27.8")
+    metric_columns[1].metric.assert_any_call("Вес", "90.0 кг")
     streamlit.container.assert_called_once_with(border=True)
-    assert all(column.container.call_args.kwargs == {"border": True} for column in section_columns)
+    assert streamlit.divider.call_count == 3
     streamlit.warning.assert_called_once_with("Пенициллин — сыпь")
     assert streamlit.subheader.call_args_list[1].args == (
         "Хронические заболевания",
@@ -68,9 +70,8 @@ def test_patient_card_renders_profile_and_clinical_lists(
 
 def test_patient_card_handles_missing_values_and_empty_lists(monkeypatch) -> None:
     streamlit = MagicMock()
-    metric_columns = [MagicMock() for _ in range(5)]
-    section_columns = [MagicMock() for _ in range(3)]
-    streamlit.columns.side_effect = [metric_columns, section_columns]
+    metric_columns = [MagicMock() for _ in range(2)]
+    streamlit.columns.return_value = metric_columns
     monkeypatch.setattr(component, "st", streamlit)
 
     component.render_patient_card(
@@ -78,8 +79,12 @@ def test_patient_card_handles_missing_values_and_empty_lists(monkeypatch) -> Non
     )
 
     streamlit.header.assert_called_once_with("Имя пациента не указано")
-    for column in metric_columns:
-        assert column.metric.call_args.args[1] == "Нет данных"
+    metric_values = [
+        call.args[1]
+        for column in metric_columns
+        for call in column.metric.call_args_list
+    ]
+    assert metric_values == ["Нет данных"] * 5
     assert streamlit.info.call_args_list[0].args == (
         "Сведения об аллергиях отсутствуют.",
     )

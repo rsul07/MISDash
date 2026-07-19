@@ -25,60 +25,59 @@ def render_patient_card(dashboard: DashboardResponse) -> None:
         st.header(patient.full_name or "Имя пациента не указано")
         st.caption("Краткая информация о пациенте")
 
-        age, gender, blood_group, bmi, weight = st.columns(5, gap="medium")
-        age.metric("Возраст", _format_age(patient.age))
-        gender.metric("Пол", _format_gender(patient.gender))
-        blood_group.metric("Группа крови", patient.blood_group or _MISSING)
-        bmi.metric("BMI", _format_number(patient.bmi))
-        weight.metric("Вес", _format_weight(patient.last_weight_kg))
+        primary, clinical = st.columns(2, gap="large")
+        primary.metric("Возраст", _format_age(patient.age))
+        primary.metric("Пол", _format_gender(patient.gender))
+        primary.metric("Группа крови", patient.blood_group or _MISSING)
+        clinical.metric("BMI", _format_number(patient.bmi))
+        clinical.metric("Вес", _format_weight(patient.last_weight_kg))
 
-        allergies, conditions, therapy = st.columns(3, gap="large")
-        with allergies.container(border=True):
-            st.subheader("Аллергии")
-            if dashboard.allergies:
-                for allergy in dashboard.allergies:
-                    reaction = f" — {allergy.reaction}" if allergy.reaction else ""
-                    st.warning(f"{allergy.agent}{reaction}")
-            else:
-                st.info("Сведения об аллергиях отсутствуют.")
+        st.divider()
+        st.subheader("Аллергии")
+        if dashboard.allergies:
+            for allergy in dashboard.allergies:
+                reaction = f" — {allergy.reaction}" if allergy.reaction else ""
+                st.warning(f"{allergy.agent}{reaction}")
+        else:
+            st.info("Сведения об аллергиях отсутствуют.")
 
-        with conditions.container(border=True):
-            st.subheader("Хронические заболевания")
-            if dashboard.conditions:
-                for condition in dashboard.conditions:
-                    details = [
-                        condition.code,
-                        condition.stage,
-                        condition.clinical_status,
-                    ]
-                    suffix = ", ".join(item for item in details if item)
-                    label = (
-                        f"{condition.display} ({suffix})"
-                        if suffix
-                        else condition.display
-                    )
-                    st.markdown(f"- {label}")
-            else:
-                st.info("Хронические состояния не указаны.")
+        st.divider()
+        st.subheader("Хронические заболевания")
+        if dashboard.conditions:
+            for condition in dashboard.conditions:
+                details = [
+                    condition.code,
+                    condition.stage,
+                    condition.clinical_status,
+                ]
+                suffix = ", ".join(item for item in details if item)
+                label = (
+                    f"{condition.display} ({suffix})"
+                    if suffix
+                    else condition.display
+                )
+                st.markdown(f"- {label}")
+        else:
+            st.info("Хронические состояния не указаны.")
 
-        with therapy.container(border=True):
-            st.subheader("Текущая терапия")
-            if dashboard.current_medications:
-                for medication in dashboard.current_medications:
-                    details = [
-                        medication.dose,
-                        medication.frequency,
-                        medication.form,
-                    ]
-                    suffix = ", ".join(item for item in details if item)
-                    label = (
-                        f"{medication.name} — {suffix}"
-                        if suffix
-                        else medication.name
-                    )
-                    st.markdown(f"- {label}")
-            else:
-                st.info("Текущая терапия не указана.")
+        st.divider()
+        st.subheader("Текущая терапия")
+        if dashboard.current_medications:
+            for medication in dashboard.current_medications:
+                details = [
+                    medication.dose,
+                    medication.frequency,
+                    medication.form,
+                ]
+                suffix = ", ".join(item for item in details if item)
+                label = (
+                    f"{medication.name} — {suffix}"
+                    if suffix
+                    else medication.name
+                )
+                st.markdown(f"- {label}")
+        else:
+            st.info("Текущая терапия не указана.")
 
 
 def _render_card_shadow() -> None:
