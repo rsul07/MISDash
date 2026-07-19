@@ -39,19 +39,17 @@ def test_metrics_render_only_active_available_group(
         on_change="rerun",
     )
     figures = [call.args[0] for call in streamlit.plotly_chart.call_args_list]
-    assert len(figures) == 2
+    assert len(figures) == 1
     assert [trace.name for trace in figures[0].data] == [
         "Систолическое АД",
         "Диастолическое АД",
     ]
     assert figures[0].data[0].type == "scattergl"
     assert list(figures[0].data[0].y) == [120]
-    assert figures[1].layout.yaxis.title.text == "beats/min"
     assert [
         call.kwargs["key"] for call in streamlit.plotly_chart.call_args_list
     ] == [
         "metric-chart-blood-pressure-0",
-        "metric-chart-blood-pressure-1",
     ]
     assert all(
         call.kwargs["use_container_width"] is True

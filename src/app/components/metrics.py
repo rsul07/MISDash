@@ -22,7 +22,7 @@ METRIC_GROUPS = (
     MetricGroup(
         "blood-pressure",
         "АД и пульс",
-        ("systolic", "diastolic", "heart-rate"),
+        ("systolic", "diastolic"),
     ),
     MetricGroup("diabetes", "Диабет", ("glucose", "hba1c")),
     MetricGroup("kidneys", "Почки", ("creatinine", "potassium")),
