@@ -1,0 +1,27 @@
+sequenceDiagram
+    autonumber
+    actor Doctor as Врач
+    participant UI as Streamlit UI
+    participant Parser as MISParser
+    participant Backend as DashboardService
+    participant Summary as SummaryService
+    participant Gemini as Gemini API
+
+    Doctor->>UI: Загружает JSON пациента
+    UI->>Parser: parse_record(file)
+    Parser->>Parser: нормализация и формирование PatientRecord
+    Parser-->>UI: PatientRecord v1
+    UI->>Backend: build(record)
+    Backend->>Backend: профиль, метрики, лента приёмов
+    Backend-->>UI: DashboardResponse v1
+    UI-->>Doctor: детерминированные разделы дашборда
+
+    opt Врач нажал «Сформировать ИИ-сводку»
+        Doctor->>UI: Явный запрос сводки
+        UI->>Summary: summarize(record, dashboard)
+        Summary->>Summary: Ограничить контекст и отметить уже видимые факты
+        Summary->>Gemini: Prompt + JSON Schema
+        Gemini-->>Summary: ClinicalSummary JSON
+        Summary-->>UI: Проверенный Markdown
+        UI-->>Doctor: Новые изменения, находки и датированный план
+    end
