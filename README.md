@@ -32,6 +32,7 @@
 - [Архитектура и работа модуля parser](docs/parser.md)
 - [Backend-driven контракт данных](docs/data_contract.md)
 - [Backend service и DashboardResponse v1](docs/backend.md)
+- [LLM-суммаризация через Gemini](docs/summarizer.md)
 
 ## Быстрый старт
 
@@ -82,13 +83,14 @@
    `DashboardService` и отображает только `DashboardResponse v1`; исходные поля
    МИС и canonical adapters во frontend не используются.
 
-### Ограничения frontend MVP
+### Ограничения прототипа
 
-- `red_flags` и `ai_summary` отображаются, но текущий backend их пока не
-  заполняет;
+- `red_flags` отображаются, но модуль медицинских правил пока их не формирует;
+- `ai_summary` создаётся только по явной кнопке и только при наличии
+  `GEMINI_API_KEY` в локальном `.env`;
 - расчётная СКФ отсутствует в `DashboardResponse v1` и не вычисляется во
   frontend;
-- аутентификация, production deployment и вызов LLM не входят в MVP;
+- аутентификация и production deployment не входят в прототип;
 - в репозитории доступен только `data/patient_etalon.json`, поэтому ручная
   проверка второго сгенерированного файла требует отдельной выгрузки.
 

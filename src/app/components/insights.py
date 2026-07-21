@@ -15,6 +15,13 @@ _EMPTY = "Пока нет данных"
 def render_insights(dashboard: DashboardResponse) -> None:
     """Display backend insights without calculating or generating them."""
 
+    render_red_flags(dashboard)
+    render_ai_summary(dashboard)
+
+
+def render_red_flags(dashboard: DashboardResponse) -> None:
+    """Display deterministic flags supplied by the backend."""
+
     st.header("Красные флаги")
     if dashboard.red_flags:
         renderers: dict[str, Callable[[str], object]] = {
@@ -26,6 +33,11 @@ def render_insights(dashboard: DashboardResponse) -> None:
             renderers[flag.severity](f"{flag.title} — {flag.explanation}")
     else:
         st.info(_EMPTY)
+
+
+
+def render_ai_summary(dashboard: DashboardResponse) -> None:
+    """Display a previously generated summary from DashboardResponse v1."""
 
     st.header("Резюме от ИИ")
     if dashboard.ai_summary:
