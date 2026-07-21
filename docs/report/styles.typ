@@ -1,5 +1,5 @@
 #let report-style(body) = {
-  set document(title: "Отчёт по проекту «Пациент за 30 секунд»")
+  set document(title: "Отчёт по проекту MIS Dash")
   set page(
     paper: "a4",
     margin: (left: 30mm, right: 15mm, top: 20mm, bottom: 20mm),
@@ -68,33 +68,4 @@
   align(center)[#project.city \ #project.year]
   pagebreak()
   counter(page).update(1)
-}
-
-#let slide-theme(body) = {
-  set document(title: "Презентация проекта «Пациент за 30 секунд»")
-  set page(
-    width: 13.333in,
-    height: 7.5in,
-    margin: (x: 0.65in, y: 0.45in),
-    fill: rgb("f7f9fc"),
-  )
-  set text(font: "FreeSans", size: 24pt, fill: rgb("17243b"), lang: "ru")
-  set par(leading: 0.65em)
-  body
-}
-
-#let slide(title, body, subtitle: none) = {
-  set page(header: context [
-    #text(size: 11pt, fill: rgb("64748b"))[Пациент за 30 секунд]
-    #h(1fr)
-    #text(size: 11pt, fill: rgb("64748b"))[#counter(page).display()]
-  ])
-  text(size: 31pt, weight: "bold", fill: rgb("075985"))[#title]
-  if subtitle != none {
-    v(0.15in)
-    text(size: 17pt, fill: rgb("64748b"))[#subtitle]
-  }
-  v(0.3in)
-  body
-  pagebreak(weak: true)
 }
