@@ -21,10 +21,14 @@ class MetricGroup:
 METRIC_GROUPS = (
     MetricGroup(
         "blood-pressure",
-        "АД и пульс",
+        "Артериальное давление",
         ("systolic", "diastolic"),
     ),
-    MetricGroup("diabetes", "Диабет", ("glucose", "hba1c")),
+    MetricGroup(
+        "glycemic-control",
+        "Гликемический контроль",
+        ("glucose", "hba1c"),
+    ),
     MetricGroup("kidneys", "Почки", ("creatinine", "potassium")),
     MetricGroup(
         "lipids",

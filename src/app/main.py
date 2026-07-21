@@ -24,8 +24,8 @@ from src.app.data import build_dashboard, build_patient_record
 from src.app.summary import render_summary_controls
 
 
-st.set_page_config(page_title="Пациент за 30 секунд")
-st.title("Пациент за 30 секунд")
+st.set_page_config(page_title="MIS Dash")
+st.title("MIS Dash")
 
 uploaded_file = st.file_uploader("Загрузите выгрузку пациента", type=["json"])
 

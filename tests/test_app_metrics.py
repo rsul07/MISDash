@@ -34,7 +34,7 @@ def test_metrics_render_only_active_available_group(
     component.render_metrics(dashboard)
 
     streamlit.tabs.assert_called_once_with(
-        ["АД и пульс", "Диабет"],
+        ["Артериальное давление", "Гликемический контроль"],
         key="metric-group-tabs",
         on_change="rerun",
     )
