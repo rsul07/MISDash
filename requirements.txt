@@ -1,5 +1,5 @@
 # Веб-фреймворк и визуализация
-streamlit
+streamlit>=1.59,<2
 plotly
 
 # Обработка данных
@@ -11,6 +11,9 @@ pydantic
 
 # Работа с окружением
 python-dotenv
+
+# LLM-суммаризация
+google-genai
 
 # Тестирование
 pytest
