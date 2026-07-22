@@ -40,6 +40,7 @@ def test_record_calculates_egfr_with_age_on_analysis_date() -> None:
     assert values[0].definition.code == "egfr-ckd-epi-2021"
     assert values[0].value == pytest.approx(95.18, rel=1e-3)
     assert values[0].source_ids == ("creatinine-1",)
+    assert values[0].interpretation == "G1"
 
 
 def test_record_skips_egfr_without_explicit_unit_or_demographics() -> None:
@@ -189,6 +190,7 @@ def test_metric_projection_exposes_calculation_and_acr() -> None:
     assert pulse_pressure.points[0].source_category == "calculated"
     assert pulse_pressure.points[0].source_ids == ["bp-1"]
     assert metrics["urine-albumin-creatinine-ratio"].points[0].value == 8.5
+    assert metrics["urine-albumin-creatinine-ratio"].points[0].interpretation == "A2"
 
 
 def _record(

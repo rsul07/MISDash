@@ -34,6 +34,7 @@ def test_dashboard_response_serializes_generic_backend_projection() -> None:
                         value=6.5,
                         source_category="laboratory",
                         source_ids=["observation-1"],
+                        interpretation="A2",
                     )
                 ],
             )
@@ -49,6 +50,7 @@ def test_dashboard_response_serializes_generic_backend_projection() -> None:
     assert payload["metrics"][0]["points"][0]["source_ids"] == [
         "observation-1"
     ]
+    assert payload["metrics"][0]["points"][0]["interpretation"] == "A2"
     assert payload["red_flags"] == []
     assert payload["ai_summary"] is None
 

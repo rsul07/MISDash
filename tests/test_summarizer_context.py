@@ -164,6 +164,7 @@ def test_context_marks_calculated_metric_and_method() -> None:
                         value=55.2,
                         source_category="calculated",
                         source_ids=["creatinine-1"],
+                        interpretation="G3a",
                     )
                 ],
                 calculation=CalculationInfo(
@@ -183,3 +184,4 @@ def test_context_marks_calculated_metric_and_method() -> None:
     assert len(context.facts) == 1
     assert "тип значения: рассчитано детерминированным кодом" in context.facts[0].text
     assert "метод расчёта: 2021 CKD-EPI creatinine equation" in context.facts[0].text
+    assert "категория показателя: G3a" in context.facts[0].text

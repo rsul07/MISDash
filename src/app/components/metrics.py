@@ -129,14 +129,21 @@ def _build_figure(unit: str | None, series: list[MetricSeries]) -> go.Figure:
     unit_label = unit or ""
 
     for item in series:
+        has_interpretation = any(point.interpretation for point in item.points)
+        interpretation_line = (
+            "Категория: %{customdata[1]}<br>" if has_interpretation else ""
+        )
         figure.add_trace(
             go.Scattergl(
                 x=[point.observed_at for point in item.points],
                 y=[point.value for point in item.points],
                 customdata=[
-                    "Расчётный показатель"
-                    if item.calculation is not None
-                    else point.source_category
+                    [
+                        "Расчётный показатель"
+                        if item.calculation is not None
+                        else point.source_category,
+                        point.interpretation or "",
+                    ]
                     for point in item.points
                 ],
                 mode=(
@@ -149,7 +156,8 @@ def _build_figure(unit: str | None, series: list[MetricSeries]) -> go.Figure:
                 hovertemplate=(
                     "Дата: %{x|%d.%m.%Y %H:%M}<br>"
                     f"Значение: %{{y:.2f}} {unit_label}<br>"
-                    "Источник: %{customdata}<extra>%{fullData.name}</extra>"
+                    f"{interpretation_line}"
+                    "Источник: %{customdata[0]}<extra>%{fullData.name}</extra>"
                 ),
             )
         )

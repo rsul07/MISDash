@@ -8,6 +8,7 @@ from src.calculators import (
     CalculatedValue,
     EGFR_CKD_EPI_2021,
     calculate_egfr_ckd_epi_2021,
+    classify_egfr_category,
 )
 from src.contracts.patient.v1 import PatientRecord
 
@@ -58,6 +59,7 @@ def calculate_egfr_metrics(record: PatientRecord) -> list[CalculatedValue]:
                 observed_at=observation.observed_at,
                 value=round(value, 2),
                 source_ids=(observation.id,),
+                interpretation=classify_egfr_category(value),
             )
         )
     return values

@@ -28,6 +28,7 @@ class MetricPoint(ContractModel):
     source_category: str
     encounter_id: str | None = None
     source_ids: list[str] = Field(default_factory=list)
+    interpretation: str | None = None
 
 
 class MetricSeries(ContractModel):

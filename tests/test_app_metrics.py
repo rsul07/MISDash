@@ -147,6 +147,21 @@ def test_metric_groups_include_calculated_backend_codes() -> None:
     assert "calculated-ldl-cholesterol" in groups["lipids"]
 
 
+def test_metric_hover_shows_backend_interpretation() -> None:
+    series = _series(
+        "egfr-ckd-epi-2021",
+        "Расчётная СКФ",
+        "mL/min/1.73m2",
+        44.9,
+    )
+    series.points[0].interpretation = "G3b"
+
+    figure = component._build_figure(series.unit, [series])
+
+    assert "Категория: %{customdata[1]}" in figure.data[0].hovertemplate
+    assert list(figure.data[0].customdata[0]) == ["laboratory", "G3b"]
+
+
 def _dashboard(*metrics: MetricSeries) -> DashboardResponse:
     return DashboardResponse(
         generated_at=datetime(2026, 7, 14, tzinfo=timezone.utc),

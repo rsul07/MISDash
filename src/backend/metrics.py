@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
-from src.calculators import CalculatedValue, CalculatorDefinition
+from src.calculators import (
+    CalculatedValue,
+    CalculatorDefinition,
+    classify_albuminuria_category,
+)
 from src.contracts.dashboard.v1 import CalculationInfo, MetricPoint, MetricSeries
 from src.contracts.patient.v1 import Observation, PatientRecord
 from src.contracts.patient.v1.common import Coding, Quantity
@@ -85,6 +89,7 @@ def _collect_value(
             source_category=observation.category,
             encounter_id=observation.encounter_id,
             source_ids=[observation.id],
+            interpretation=_direct_interpretation(code, float(quantity.value)),
         )
     )
 
@@ -114,6 +119,7 @@ def _build_calculated_series(record: PatientRecord) -> list[MetricSeries]:
                         value=item.value,
                         source_category="calculated",
                         source_ids=list(item.source_ids),
+                        interpretation=item.interpretation,
                     )
                     for item in values
                 ],
@@ -130,3 +136,12 @@ def _build_calculated_series(record: PatientRecord) -> list[MetricSeries]:
             )
         )
     return result
+
+
+def _direct_interpretation(code: str, value: float) -> str | None:
+    if code != "urine-albumin-creatinine-ratio":
+        return None
+    try:
+        return classify_albuminuria_category(value)
+    except ValueError:
+        return None

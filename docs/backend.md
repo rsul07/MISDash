@@ -23,7 +23,8 @@ DashboardResponse v1
 ├── metrics[]
 │   ├── calculation?
 │   └── points[]
-│       └── source_ids[]
+│       ├── source_ids[]
+│       └── interpretation?
 ├── visits[]
 ├── red_flags[]
 └── ai_summary
@@ -38,6 +39,9 @@ DashboardResponse v1
 `source_category="calculated"`, а `source_ids` содержит идентификаторы
 канонических наблюдений, использованных в формуле. Обычная точка также содержит
 ID исходного `Observation`.
+Для eGFR и отношения альбумин/креатинин поле `interpretation` содержит категорию
+KDIGO (`G*` или `A*`), вычисленную по неокруглённому значению. Это категория
+точки, а не диагноз хронической болезни почек.
 
 Модели находятся в `src/contracts/dashboard/v1/`. Как и канонический
 контракт, они запрещают неизвестные поля и требуют новую major-версию при

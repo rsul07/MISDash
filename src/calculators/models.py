@@ -30,3 +30,4 @@ class CalculatedValue:
     observed_at: date | datetime
     value: float
     source_ids: tuple[str, ...]
+    interpretation: str | None = None
