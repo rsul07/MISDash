@@ -9,6 +9,7 @@ import pytest
 
 from src.app.components import metrics as component
 from src.contracts.dashboard.v1 import (
+    CalculationInfo,
     DashboardPatient,
     DashboardResponse,
     MetricPoint,
@@ -106,6 +107,44 @@ def test_metrics_handle_missing_series_and_empty_points(
     streamlit.info.assert_called_once_with(
         "Нет данных для отображения динамики показателей."
     )
+
+
+def test_metrics_render_backend_calculation_explanation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    streamlit = MagicMock()
+    streamlit.tabs.return_value = [_Tab(open=True)]
+    monkeypatch.setattr(component, "st", streamlit)
+    calculated = _series("pulse-pressure", "Пульсовое давление", "mmHg", 60)
+    calculated.calculation = CalculationInfo(
+        code="pulse-pressure",
+        description="Разница между САД и ДАД.",
+        inputs=["САД", "ДАД"],
+        purpose="Показать динамику.",
+        method="SBP - DBP",
+        standard="ESC 2024",
+        limitations=["Не является прямым измерением жёсткости артерий."],
+        references=["https://example.test/standard"],
+    )
+
+    component.render_metrics(_dashboard(calculated))
+
+    streamlit.expander.assert_called_once_with(
+        "Как рассчитан показатель «Пульсовое давление»"
+    )
+    markdown = [call.args[0] for call in streamlit.markdown.call_args_list]
+    assert "**Метод:** SBP - DBP" in markdown
+    assert any("Не является прямым измерением" in item for item in markdown)
+
+
+def test_metric_groups_include_calculated_backend_codes() -> None:
+    groups = {group.key: group.codes for group in component.METRIC_GROUPS}
+
+    assert "pulse-pressure" in groups["blood-pressure"]
+    assert "egfr-ckd-epi-2021" in groups["kidneys"]
+    assert "urine-albumin-creatinine-ratio" in groups["kidneys"]
+    assert "non-hdl-cholesterol" in groups["lipids"]
+    assert "calculated-ldl-cholesterol" in groups["lipids"]
 
 
 def _dashboard(*metrics: MetricSeries) -> DashboardResponse:

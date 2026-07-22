@@ -8,7 +8,7 @@ from datetime import date, datetime, time, timedelta, timezone
 import plotly.graph_objects as go
 import streamlit as st
 
-from src.contracts.dashboard.v1 import DashboardResponse, MetricSeries
+from src.contracts.dashboard.v1 import CalculationInfo, DashboardResponse, MetricSeries
 
 
 @dataclass(frozen=True)
@@ -22,20 +22,31 @@ METRIC_GROUPS = (
     MetricGroup(
         "blood-pressure",
         "Артериальное давление",
-        ("systolic", "diastolic"),
+        ("systolic", "diastolic", "pulse-pressure"),
     ),
     MetricGroup(
         "glycemic-control",
         "Гликемический контроль",
         ("glucose", "hba1c"),
     ),
-    MetricGroup("kidneys", "Почки", ("creatinine", "potassium")),
+    MetricGroup(
+        "kidneys",
+        "Почки",
+        (
+            "creatinine",
+            "egfr-ckd-epi-2021",
+            "urine-albumin-creatinine-ratio",
+            "potassium",
+        ),
+    ),
     MetricGroup(
         "lipids",
         "Липиды",
         (
             "total-cholesterol",
+            "non-hdl-cholesterol",
             "ldl-cholesterol",
+            "calculated-ldl-cholesterol",
             "hdl-cholesterol",
             "triglycerides",
         ),
@@ -86,6 +97,7 @@ def render_metrics(dashboard: DashboardResponse) -> None:
                     use_container_width=True,
                     config={"displayModeBar": False},
                 )
+            _render_calculation_explanations(series)
 
 
 def _series_for_group(
@@ -121,7 +133,12 @@ def _build_figure(unit: str | None, series: list[MetricSeries]) -> go.Figure:
             go.Scattergl(
                 x=[point.observed_at for point in item.points],
                 y=[point.value for point in item.points],
-                customdata=[point.source_category for point in item.points],
+                customdata=[
+                    "Расчётный показатель"
+                    if item.calculation is not None
+                    else point.source_category
+                    for point in item.points
+                ],
                 mode=(
                     "lines"
                     if len(item.points) > DENSE_SERIES_POINT_THRESHOLD
@@ -154,6 +171,32 @@ def _build_figure(unit: str | None, series: list[MetricSeries]) -> go.Figure:
         yaxis_title=unit or "Значение",
     )
     return figure
+
+
+def _render_calculation_explanations(series: list[MetricSeries]) -> None:
+    for item in series:
+        if item.calculation is None:
+            continue
+        with st.expander(f"Как рассчитан показатель «{item.display}»"):
+            _render_calculation_info(item.calculation)
+
+
+def _render_calculation_info(info: CalculationInfo) -> None:
+    st.markdown(f"**Что это:** {info.description}")
+    st.markdown(f"**Для чего:** {info.purpose}")
+    st.markdown(f"**Используемые данные:** {', '.join(info.inputs)}")
+    st.markdown(f"**Метод:** {info.method}")
+    st.markdown(f"**Основание:** {info.standard}")
+    if info.limitations:
+        st.markdown("**Ограничения:**")
+        for limitation in info.limitations:
+            st.markdown(f"- {limitation}")
+    if info.references:
+        links = " · ".join(
+            f"[Источник {index}]({url})"
+            for index, url in enumerate(info.references, start=1)
+        )
+        st.markdown(f"**Ссылки:** {links}")
 
 
 def _default_date_range(

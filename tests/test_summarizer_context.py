@@ -5,6 +5,13 @@ from __future__ import annotations
 from datetime import date, datetime, timezone
 
 from src.backend import DashboardService
+from src.contracts.dashboard.v1 import (
+    CalculationInfo,
+    DashboardPatient,
+    DashboardResponse,
+    MetricPoint,
+    MetricSeries,
+)
 from src.contracts.patient.v1 import (
     Condition,
     DiagnosticReport,
@@ -139,3 +146,40 @@ def test_context_sends_metric_summary_instead_of_raw_observations() -> None:
     assert "среднее за предыдущие 12 месяцев: 5.00 mmol/L" in metric.text
     assert "изменение средних: +1.50 mmol/L" in metric.text
     assert "glucose-0" not in metric.text
+
+
+def test_context_marks_calculated_metric_and_method() -> None:
+    record = _record()
+    dashboard = DashboardResponse(
+        generated_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+        patient=DashboardPatient(id="patient-1", full_name="Synthetic Patient"),
+        metrics=[
+            MetricSeries(
+                code="egfr-ckd-epi-2021",
+                display="Расчётная СКФ",
+                unit="mL/min/1.73m2",
+                points=[
+                    MetricPoint(
+                        observed_at=date(2025, 12, 1),
+                        value=55.2,
+                        source_category="calculated",
+                        source_ids=["creatinine-1"],
+                    )
+                ],
+                calculation=CalculationInfo(
+                    code="egfr-ckd-epi-2021",
+                    description="Расчётная функция почек.",
+                    inputs=["Креатинин", "Возраст", "Пол"],
+                    purpose="Показать динамику.",
+                    method="2021 CKD-EPI creatinine equation",
+                    standard="KDIGO 2024",
+                ),
+            )
+        ],
+    )
+
+    context = build_summary_context(record, dashboard)
+
+    assert len(context.facts) == 1
+    assert "тип значения: рассчитано детерминированным кодом" in context.facts[0].text
+    assert "метод расчёта: 2021 CKD-EPI creatinine equation" in context.facts[0].text
