@@ -187,6 +187,7 @@ def _render_calculation_explanations(series: list[MetricSeries]) -> None:
             continue
         with st.expander(f"Как рассчитан показатель «{item.display}»"):
             _render_calculation_info(item.calculation)
+            _render_calculation_example(item)
 
 
 def _render_calculation_info(info: CalculationInfo) -> None:
@@ -205,6 +206,34 @@ def _render_calculation_info(info: CalculationInfo) -> None:
             for index, url in enumerate(info.references, start=1)
         )
         st.markdown(f"**Ссылки:** {links}")
+
+
+def _render_calculation_example(series: MetricSeries) -> None:
+    points = [point for point in series.points if point.calculation_inputs]
+    if not points:
+        return
+    point = max(points, key=lambda item: _as_utc_naive(item.observed_at))
+    observed_at = point.observed_at.strftime("%d.%m.%Y")
+    st.markdown(f"**Пример по данным пациента от {observed_at}:**")
+    for input_value in point.calculation_inputs:
+        unit = f" {input_value.unit}" if input_value.unit else ""
+        source = (
+            f" · источник `{input_value.source_id}`"
+            if input_value.source_id
+            else ""
+        )
+        value = _format_input_value(input_value.value)
+        st.markdown(f"- {input_value.display}: {value}{unit}{source}")
+    result_unit = f" {series.unit}" if series.unit else ""
+    st.markdown(f"**Результат:** {_format_input_value(point.value)}{result_unit}")
+    if point.interpretation:
+        st.markdown(f"**Категория:** {point.interpretation}")
+
+
+def _format_input_value(value: float | int | str) -> str:
+    if isinstance(value, float):
+        return f"{value:g}"
+    return str(value)
 
 
 def _default_date_range(
