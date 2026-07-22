@@ -21,7 +21,9 @@ DashboardResponse v1
 ├── conditions[]
 ├── current_medications[]
 ├── metrics[]
+│   ├── calculation?
 │   └── points[]
+│       └── source_ids[]
 ├── visits[]
 ├── red_flags[]
 └── ai_summary
@@ -30,6 +32,12 @@ DashboardResponse v1
 `metrics[]` — универсальная коллекция временных рядов. Экран выбирает ряд по
 стабильному backend-коду (`glucose`, `hba1c`, `systolic`), а не ищет данные в
 конкретном блоке JSON.
+
+У производного ряда поле `calculation` объясняет показатель, входы, назначение,
+метод, стандарт и ограничения. Каждая производная точка помечена
+`source_category="calculated"`, а `source_ids` содержит идентификаторы
+канонических наблюдений, использованных в формуле. Обычная точка также содержит
+ID исходного `Observation`.
 
 Модели находятся в `src/contracts/dashboard/v1/`. Как и канонический
 контракт, они запрещают неизвестные поля и требуют новую major-версию при
@@ -64,10 +72,25 @@ DashboardResponse v1
 
 - `systolic`, `diastolic`, `heart-rate`, `body-weight`, `bmi`;
 - `glucose`, `hba1c`, `creatinine`, `potassium`;
-- `total-cholesterol`, `ldl-cholesterol`, `hdl-cholesterol`, `triglycerides`.
+- `total-cholesterol`, `ldl-cholesterol`, `hdl-cholesterol`, `triglycerides`;
+- `urine-albumin-creatinine-ratio`.
+
+`src/backend/calculations/` связывает канонические записи с чистыми формулами
+из `src/calculators` и публикует дополнительные ряды:
+
+- `egfr-ckd-epi-2021`;
+- `non-hdl-cholesterol`;
+- `calculated-ldl-cholesterol`, только если в панели нет пригодного прямого ЛПНП;
+- `pulse-pressure`.
+
+Липиды соединяются только внутри одного `report_id`, САД и ДАД — только внутри
+одного `Observation`, а возраст для eGFR определяется на дату креатинина.
+Производные значения не записываются обратно в `PatientRecord` и могут быть
+полностью перестроены.
 
 Русские и международные обозначения единиц нормализуются. Значение с
-несовместимой единицей не подмешивается в ряд без доказанной формулы конверсии.
+неизвестной или несовместимой единицей не подмешивается в ряд без доказанной
+формулы конверсии.
 Глюкоза и креатинин мочи не классифицируются как показатели крови. Точки
 остаются отдельными и сортируются по времени; канонический слой не изменяется.
 
@@ -89,9 +112,11 @@ flowchart LR
     JSON[patient_record.json] --> Repository[src/storage]
     Repository --> Record[PatientRecord v1]
     Record --> Service[DashboardService]
+    Record --> Calculators[calculations + calculators]
     Service --> Profile[profile.py]
     Service --> Metrics[metrics.py]
     Service --> Visits[visits.py]
+    Calculators --> Metrics
     Profile --> Response[DashboardResponse v1]
     Metrics --> Response
     Visits --> Response

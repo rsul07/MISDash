@@ -68,6 +68,11 @@ flowchart LR
 
 Именно здесь задаются агрегация по дням, приоритет источников, фильтры и вычисляемые показатели.
 
+Детерминированные медицинские формулы находятся в `src/calculators`, а правила
+выбора совместимых канонических входов — в `src/backend/calculations`. Расчёты
+не изменяют `PatientRecord`: они становятся объяснимыми временными рядами
+`DashboardResponse` с методом и `source_ids` исходных наблюдений.
+
 Публичная форма первого backend-представления — `DashboardResponse v1`.
 Его исполняемая схема находится в `src/contracts/dashboard/v1/`, подробности —
 в [документации backend service](backend.md).
@@ -212,7 +217,7 @@ pack-years, алкоголь, физическая активность и пр�
 1. `MISParser` преобразует грязный JSON в `PatientRecord v1`.
 2. Repository при необходимости сохраняет/загружает каноническую запись.
 3. `DashboardService` строит `DashboardResponse v1`.
-4. Будущий frontend получает только `DashboardResponse`.
+4. Frontend получает только `DashboardResponse`.
 
 ## Правило сохранности данных
 
