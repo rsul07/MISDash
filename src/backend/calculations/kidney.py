@@ -6,6 +6,7 @@ from datetime import date, datetime
 
 from src.calculators import (
     CalculatedValue,
+    CalculationInput,
     EGFR_CKD_EPI_2021,
     calculate_egfr_ckd_epi_2021,
     classify_egfr_category,
@@ -59,6 +60,19 @@ def calculate_egfr_metrics(record: PatientRecord) -> list[CalculatedValue]:
                 observed_at=observation.observed_at,
                 value=round(value, 2),
                 source_ids=(observation.id,),
+                inputs=(
+                    CalculationInput(
+                        display="Сывороточный креатинин",
+                        value=float(quantity.value),
+                        unit=quantity.unit,
+                        source_id=observation.id,
+                    ),
+                    CalculationInput(display="Возраст", value=age, unit="лет"),
+                    CalculationInput(
+                        display="Пол",
+                        value="женский" if sex == "female" else "мужской",
+                    ),
+                ),
                 interpretation=classify_egfr_category(value),
             )
         )

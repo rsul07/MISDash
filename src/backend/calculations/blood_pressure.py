@@ -6,6 +6,7 @@ from collections import defaultdict
 
 from src.calculators import (
     CalculatedValue,
+    CalculationInput,
     PULSE_PRESSURE,
     calculate_pulse_pressure,
 )
@@ -49,6 +50,20 @@ def calculate_pulse_pressure_metrics(
                 observed_at=observation.observed_at,
                 value=round(pulse_pressure, 2),
                 source_ids=(observation.id,),
+                inputs=(
+                    CalculationInput(
+                        display="Систолическое АД",
+                        value=components["systolic"][0],
+                        unit="mmHg",
+                        source_id=observation.id,
+                    ),
+                    CalculationInput(
+                        display="Диастолическое АД",
+                        value=components["diastolic"][0],
+                        unit="mmHg",
+                        source_id=observation.id,
+                    ),
+                ),
             )
         )
     return values

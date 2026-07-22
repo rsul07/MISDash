@@ -7,6 +7,7 @@ from datetime import date, datetime
 
 from src.calculators import (
     CalculatedValue,
+    CalculationInput,
     NON_HDL_CHOLESTEROL,
     SAMPSON_LDL_CHOLESTEROL,
     calculate_non_hdl_cholesterol,
@@ -59,6 +60,14 @@ def calculate_lipid_metrics(record: PatientRecord) -> list[CalculatedValue]:
                 observed_at=observed_at,
                 value=round(non_hdl, 3),
                 source_ids=(total_observation.id, hdl_observation.id),
+                inputs=(
+                    _calculation_input(
+                        "Общий холестерин", total_value, total_observation
+                    ),
+                    _calculation_input(
+                        "Холестерин ЛПВП", hdl_value, hdl_observation
+                    ),
+                ),
             )
         )
 
@@ -95,9 +104,35 @@ def calculate_lipid_metrics(record: PatientRecord) -> list[CalculatedValue]:
                     hdl_observation.id,
                     triglycerides_observation.id,
                 ),
+                inputs=(
+                    _calculation_input(
+                        "Общий холестерин", total_value, total_observation
+                    ),
+                    _calculation_input(
+                        "Холестерин ЛПВП", hdl_value, hdl_observation
+                    ),
+                    _calculation_input(
+                        "Триглицериды",
+                        triglycerides_value,
+                        triglycerides_observation,
+                    ),
+                ),
             )
         )
     return values
+
+
+def _calculation_input(
+    display: str,
+    value: float,
+    observation: Observation,
+) -> CalculationInput:
+    return CalculationInput(
+        display=display,
+        value=value,
+        unit="mmol/L",
+        source_id=observation.id,
+    )
 
 
 def _estimate_ldl(

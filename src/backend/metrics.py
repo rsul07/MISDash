@@ -119,6 +119,15 @@ def _build_calculated_series(record: PatientRecord) -> list[MetricSeries]:
                         value=item.value,
                         source_category="calculated",
                         source_ids=list(item.source_ids),
+                        calculation_inputs=[
+                            {
+                                "display": input_value.display,
+                                "value": input_value.value,
+                                "unit": input_value.unit,
+                                "source_id": input_value.source_id,
+                            }
+                            for input_value in item.inputs
+                        ],
                         interpretation=item.interpretation,
                     )
                     for item in values

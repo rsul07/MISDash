@@ -9,10 +9,11 @@ from .lipids import (
     calculate_non_hdl_cholesterol,
     calculate_sampson_ldl_cholesterol,
 )
-from .models import CalculatedValue, CalculatorDefinition
+from .models import CalculatedValue, CalculationInput, CalculatorDefinition
 
 __all__ = [
     "CalculatedValue",
+    "CalculationInput",
     "CalculatorDefinition",
     "EGFR_CKD_EPI_2021",
     "NON_HDL_CHOLESTEROL",

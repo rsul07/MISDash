@@ -23,6 +23,16 @@ class CalculatorDefinition:
 
 
 @dataclass(frozen=True)
+class CalculationInput:
+    """One concrete operand used to produce a calculated value."""
+
+    display: str
+    value: float | int | str
+    unit: str | None = None
+    source_id: str | None = None
+
+
+@dataclass(frozen=True)
 class CalculatedValue:
     """One derived value with the exact canonical records used as inputs."""
 
@@ -30,4 +40,5 @@ class CalculatedValue:
     observed_at: date | datetime
     value: float
     source_ids: tuple[str, ...]
+    inputs: tuple[CalculationInput, ...] = ()
     interpretation: str | None = None

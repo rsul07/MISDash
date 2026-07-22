@@ -22,12 +22,22 @@ class CalculationInfo(ContractModel):
     references: list[str] = Field(default_factory=list)
 
 
+class CalculationInput(ContractModel):
+    """One backend-provided operand of a calculated metric point."""
+
+    display: str
+    value: float | int | str
+    unit: str | None = None
+    source_id: str | None = None
+
+
 class MetricPoint(ContractModel):
     observed_at: date | datetime
     value: float
     source_category: str
     encounter_id: str | None = None
     source_ids: list[str] = Field(default_factory=list)
+    calculation_inputs: list[CalculationInput] = Field(default_factory=list)
     interpretation: str | None = None
 
 

@@ -40,6 +40,13 @@ def test_record_calculates_egfr_with_age_on_analysis_date() -> None:
     assert values[0].definition.code == "egfr-ckd-epi-2021"
     assert values[0].value == pytest.approx(95.18, rel=1e-3)
     assert values[0].source_ids == ("creatinine-1",)
+    assert [item.display for item in values[0].inputs] == [
+        "Сывороточный креатинин",
+        "Возраст",
+        "Пол",
+    ]
+    assert values[0].inputs[0].source_id == "creatinine-1"
+    assert values[0].inputs[1].value == 44
     assert values[0].interpretation == "G1"
 
 
@@ -84,6 +91,10 @@ def test_record_calculates_lipids_only_inside_one_report() -> None:
 
     assert values["non-hdl-cholesterol"].value == pytest.approx(3.9)
     assert values["non-hdl-cholesterol"].source_ids == ("tc", "hdl")
+    assert [item.value for item in values["non-hdl-cholesterol"].inputs] == [
+        5.2,
+        1.3,
+    ]
     assert values["calculated-ldl-cholesterol"].value == pytest.approx(
         3.287,
         rel=1e-3,
@@ -155,6 +166,7 @@ def test_record_calculates_pulse_pressure_only_from_one_bp_observation() -> None
     assert values[0].definition.code == "pulse-pressure"
     assert values[0].value == 60
     assert values[0].source_ids == ("bp-1",)
+    assert [item.value for item in values[0].inputs] == [145, 85]
 
 
 def test_metric_projection_exposes_calculation_and_acr() -> None:
@@ -189,6 +201,10 @@ def test_metric_projection_exposes_calculation_and_acr() -> None:
     )
     assert pulse_pressure.points[0].source_category == "calculated"
     assert pulse_pressure.points[0].source_ids == ["bp-1"]
+    assert [item.display for item in pulse_pressure.points[0].calculation_inputs] == [
+        "Систолическое АД",
+        "Диастолическое АД",
+    ]
     assert metrics["urine-albumin-creatinine-ratio"].points[0].value == 8.5
     assert metrics["urine-albumin-creatinine-ratio"].points[0].interpretation == "A2"
 

@@ -1,7 +1,7 @@
 """Public exports for DashboardResponse v1."""
 
 from .common import CodeLabel
-from .metrics import CalculationInfo, MetricPoint, MetricSeries
+from .metrics import CalculationInfo, CalculationInput, MetricPoint, MetricSeries
 from .profile import (
     AllergySummary,
     ConditionSummary,
@@ -14,6 +14,7 @@ from .visits import VisitSummary
 __all__ = [
     "AllergySummary",
     "CalculationInfo",
+    "CalculationInput",
     "CodeLabel",
     "ConditionSummary",
     "DashboardPatient",

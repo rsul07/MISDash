@@ -27,7 +27,7 @@ class RedFlag(ContractModel):
 
 
 class DashboardResponse(ContractModel):
-    schema_version: Literal["1.0"] = "1.0"
+    schema_version: Literal["1.1"] = "1.1"
     generated_at: datetime
     patient: DashboardPatient
     allergies: list[AllergySummary] = Field(default_factory=list)

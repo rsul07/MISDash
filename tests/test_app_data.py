@@ -24,7 +24,7 @@ def test_build_dashboard_parses_raw_mis_export() -> None:
     )
 
     assert isinstance(dashboard, DashboardResponse)
-    assert dashboard.schema_version == "1.0"
+    assert dashboard.schema_version == "1.1"
     assert dashboard.patient.id == "patient-1"
     assert dashboard.patient.full_name == "Ivanov Ivan"
 
