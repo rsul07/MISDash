@@ -20,8 +20,11 @@ flowchart LR
         subgraph delivery["Backend-driven представление"]
             direction LR
             backend["«container»<br/><b>DashboardService</b><br/><small>frontend-проекции</small>"]
+            calculators["«container»<br/><b>Clinical calculators</b><br/><small>eGFR · липиды · пульсовое давление</small>"]
             response["«container»<br/><b>DashboardResponse v1</b><br/><small>стабильный UI-контракт</small>"]
             web["«container»<br/><b>Streamlit UI</b><br/><small>карточка · графики · приёмы</small>"]
+            backend -->|"нормализованные входы"| calculators
+            calculators -. "расчётные ряды" .-> backend
             backend --> response --> web
         end
 
@@ -50,7 +53,7 @@ flowchart LR
     classDef ai fill:#ecfdf5,stroke:#059669,color:#064e3b,stroke-width:2px;
     classDef external fill:#e2e8f0,stroke:#64748b,color:#0f172a,stroke-width:2px;
     class doctor person;
-    class parser,backend,web internal;
+    class parser,backend,calculators,web internal;
     class record,response,storage,airesult contract;
     class summary ai;
     class mis,gemini external;

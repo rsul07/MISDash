@@ -6,6 +6,8 @@ import pytest
 from pydantic import ValidationError
 
 from src.contracts.dashboard.v1 import (
+    CalculationInfo,
+    CalculationInput,
     DashboardPatient,
     DashboardResponse,
     MetricPoint,
@@ -32,6 +34,8 @@ def test_dashboard_response_serializes_generic_backend_projection() -> None:
                         observed_at=date(2026, 7, 1),
                         value=6.5,
                         source_category="laboratory",
+                        source_ids=["observation-1"],
+                        interpretation="A2",
                     )
                 ],
             )
@@ -40,12 +44,60 @@ def test_dashboard_response_serializes_generic_backend_projection() -> None:
 
     payload = response.model_dump(mode="json")
 
-    assert payload["schema_version"] == "1.0"
+    assert payload["schema_version"] == "1.1"
     assert payload["generated_at"] == "2026-07-14T10:00:00Z"
     assert payload["patient"]["birth_date"] == "1980-03-01"
     assert payload["metrics"][0]["points"][0]["value"] == 6.5
+    assert payload["metrics"][0]["points"][0]["source_ids"] == [
+        "observation-1"
+    ]
+    assert payload["metrics"][0]["points"][0]["interpretation"] == "A2"
     assert payload["red_flags"] == []
     assert payload["ai_summary"] is None
+
+
+def test_dashboard_metric_supports_backend_calculation_explanation() -> None:
+    series = MetricSeries(
+        code="pulse-pressure",
+        display="Пульсовое давление",
+        unit="mmHg",
+        calculation=CalculationInfo(
+            code="pulse-pressure",
+            description="Разница между САД и ДАД.",
+            inputs=["САД", "ДАД"],
+            purpose="Показать динамику.",
+            method="SBP - DBP",
+            standard="ESC 2024",
+            limitations=["Не является прямым измерением жёсткости артерий."],
+            references=["https://example.test/standard"],
+        ),
+        points=[
+            MetricPoint(
+                observed_at=date(2026, 7, 1),
+                value=60,
+                source_category="calculated",
+                source_ids=["bp-1"],
+                calculation_inputs=[
+                    CalculationInput(
+                        display="Систолическое АД",
+                        value=140,
+                        unit="mmHg",
+                        source_id="bp-1",
+                    ),
+                    CalculationInput(
+                        display="Диастолическое АД",
+                        value=80,
+                        unit="mmHg",
+                        source_id="bp-1",
+                    ),
+                ],
+            )
+        ],
+    )
+
+    assert series.calculation is not None
+    assert series.calculation.method == "SBP - DBP"
+    assert series.points[0].calculation_inputs[0].value == 140
 
 
 def test_dashboard_contract_rejects_raw_mis_fields() -> None:

@@ -26,7 +26,7 @@ def test_dashboard_service_builds_complete_frontend_response() -> None:
         generated_at=GENERATED_AT,
     )
 
-    assert response.schema_version == "1.0"
+    assert response.schema_version == "1.1"
     assert response.generated_at == GENERATED_AT
     assert response.patient.full_name == "Иванов Иван"
     assert response.patient.age == 46

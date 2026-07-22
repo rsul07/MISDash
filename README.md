@@ -100,7 +100,7 @@ mis_dash/
 ├── src/
 │   ├── app/              # Streamlit-интерфейс
 │   ├── backend/          # построение DashboardResponse v1
-│   ├── calculators/      # медицинские вычисления и будущие правила
+│   ├── calculators/      # объяснимые медицинские формулы
 │   ├── contracts/        # PatientRecord v1 и DashboardResponse v1
 │   ├── parser/           # разбор и нормализация выгрузки МИС
 │   ├── storage/          # чтение и атомарная запись PatientRecord

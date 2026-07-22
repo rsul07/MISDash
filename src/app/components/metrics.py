@@ -8,7 +8,7 @@ from datetime import date, datetime, time, timedelta, timezone
 import plotly.graph_objects as go
 import streamlit as st
 
-from src.contracts.dashboard.v1 import DashboardResponse, MetricSeries
+from src.contracts.dashboard.v1 import CalculationInfo, DashboardResponse, MetricSeries
 
 
 @dataclass(frozen=True)
@@ -22,20 +22,31 @@ METRIC_GROUPS = (
     MetricGroup(
         "blood-pressure",
         "Артериальное давление",
-        ("systolic", "diastolic"),
+        ("systolic", "diastolic", "pulse-pressure"),
     ),
     MetricGroup(
         "glycemic-control",
         "Гликемический контроль",
         ("glucose", "hba1c"),
     ),
-    MetricGroup("kidneys", "Почки", ("creatinine", "potassium")),
+    MetricGroup(
+        "kidneys",
+        "Почки",
+        (
+            "creatinine",
+            "egfr-ckd-epi-2021",
+            "urine-albumin-creatinine-ratio",
+            "potassium",
+        ),
+    ),
     MetricGroup(
         "lipids",
         "Липиды",
         (
             "total-cholesterol",
+            "non-hdl-cholesterol",
             "ldl-cholesterol",
+            "calculated-ldl-cholesterol",
             "hdl-cholesterol",
             "triglycerides",
         ),
@@ -86,6 +97,7 @@ def render_metrics(dashboard: DashboardResponse) -> None:
                     use_container_width=True,
                     config={"displayModeBar": False},
                 )
+            _render_calculation_explanations(series)
 
 
 def _series_for_group(
@@ -117,11 +129,23 @@ def _build_figure(unit: str | None, series: list[MetricSeries]) -> go.Figure:
     unit_label = unit or ""
 
     for item in series:
+        has_interpretation = any(point.interpretation for point in item.points)
+        interpretation_line = (
+            "Категория: %{customdata[1]}<br>" if has_interpretation else ""
+        )
         figure.add_trace(
             go.Scattergl(
                 x=[point.observed_at for point in item.points],
                 y=[point.value for point in item.points],
-                customdata=[point.source_category for point in item.points],
+                customdata=[
+                    [
+                        "Расчётный показатель"
+                        if item.calculation is not None
+                        else point.source_category,
+                        point.interpretation or "",
+                    ]
+                    for point in item.points
+                ],
                 mode=(
                     "lines"
                     if len(item.points) > DENSE_SERIES_POINT_THRESHOLD
@@ -132,7 +156,8 @@ def _build_figure(unit: str | None, series: list[MetricSeries]) -> go.Figure:
                 hovertemplate=(
                     "Дата: %{x|%d.%m.%Y %H:%M}<br>"
                     f"Значение: %{{y:.2f}} {unit_label}<br>"
-                    "Источник: %{customdata}<extra>%{fullData.name}</extra>"
+                    f"{interpretation_line}"
+                    "Источник: %{customdata[0]}<extra>%{fullData.name}</extra>"
                 ),
             )
         )
@@ -154,6 +179,61 @@ def _build_figure(unit: str | None, series: list[MetricSeries]) -> go.Figure:
         yaxis_title=unit or "Значение",
     )
     return figure
+
+
+def _render_calculation_explanations(series: list[MetricSeries]) -> None:
+    for item in series:
+        if item.calculation is None:
+            continue
+        with st.expander(f"Как рассчитан показатель «{item.display}»"):
+            _render_calculation_info(item.calculation)
+            _render_calculation_example(item)
+
+
+def _render_calculation_info(info: CalculationInfo) -> None:
+    st.markdown(f"**Что это:** {info.description}")
+    st.markdown(f"**Для чего:** {info.purpose}")
+    st.markdown(f"**Используемые данные:** {', '.join(info.inputs)}")
+    st.markdown(f"**Метод:** {info.method}")
+    st.markdown(f"**Основание:** {info.standard}")
+    if info.limitations:
+        st.markdown("**Ограничения:**")
+        for limitation in info.limitations:
+            st.markdown(f"- {limitation}")
+    if info.references:
+        links = " · ".join(
+            f"[Источник {index}]({url})"
+            for index, url in enumerate(info.references, start=1)
+        )
+        st.markdown(f"**Ссылки:** {links}")
+
+
+def _render_calculation_example(series: MetricSeries) -> None:
+    points = [point for point in series.points if point.calculation_inputs]
+    if not points:
+        return
+    point = max(points, key=lambda item: _as_utc_naive(item.observed_at))
+    observed_at = point.observed_at.strftime("%d.%m.%Y")
+    st.markdown(f"**Пример по данным пациента от {observed_at}:**")
+    for input_value in point.calculation_inputs:
+        unit = f" {input_value.unit}" if input_value.unit else ""
+        source = (
+            f" · источник `{input_value.source_id}`"
+            if input_value.source_id
+            else ""
+        )
+        value = _format_input_value(input_value.value)
+        st.markdown(f"- {input_value.display}: {value}{unit}{source}")
+    result_unit = f" {series.unit}" if series.unit else ""
+    st.markdown(f"**Результат:** {_format_input_value(point.value)}{result_unit}")
+    if point.interpretation:
+        st.markdown(f"**Категория:** {point.interpretation}")
+
+
+def _format_input_value(value: float | int | str) -> str:
+    if isinstance(value, float):
+        return f"{value:g}"
+    return str(value)
 
 
 def _default_date_range(

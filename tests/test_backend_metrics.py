@@ -60,6 +60,14 @@ def test_metric_projection_excludes_urine_and_incompatible_units() -> None:
             value=Quantity(value=10, unit="ммоль/л"),
         ),
         Observation(
+            id="unitless-blood-glucose",
+            source=SOURCE,
+            observed_at=date(2026, 1, 1),
+            category="laboratory",
+            coding=Coding(display="Глюкоза"),
+            value=Quantity(value=6.5),
+        ),
+        Observation(
             id="blood-glucose-mg",
             source=SOURCE,
             observed_at=date(2026, 1, 1),

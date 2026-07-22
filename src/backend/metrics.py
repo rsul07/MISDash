@@ -2,45 +2,23 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-
-from src.contracts.dashboard.v1 import MetricPoint, MetricSeries
+from src.calculators import (
+    CalculatedValue,
+    CalculatorDefinition,
+    classify_albuminuria_category,
+)
+from src.contracts.dashboard.v1 import CalculationInfo, MetricPoint, MetricSeries
 from src.contracts.patient.v1 import Observation, PatientRecord
 from src.contracts.patient.v1.common import Coding, Quantity
 
+from .calculations import calculate_record_metrics
 from .common import chronological_key
-
-
-@dataclass(frozen=True)
-class MetricDefinition:
-    code: str
-    display: str
-    unit: str
-
-
-METRICS = (
-    MetricDefinition("systolic", "Систолическое АД", "mmHg"),
-    MetricDefinition("diastolic", "Диастолическое АД", "mmHg"),
-    MetricDefinition("heart-rate", "Частота сердечных сокращений", "beats/min"),
-    MetricDefinition("body-weight", "Масса тела", "kg"),
-    MetricDefinition("bmi", "Индекс массы тела", "kg/m2"),
-    MetricDefinition("glucose", "Глюкоза крови", "mmol/L"),
-    MetricDefinition("hba1c", "Гликированный гемоглобин", "%"),
-    MetricDefinition("creatinine", "Креатинин", "µmol/L"),
-    MetricDefinition("total-cholesterol", "Общий холестерин", "mmol/L"),
-    MetricDefinition("ldl-cholesterol", "Холестерин ЛПНП", "mmol/L"),
-    MetricDefinition("hdl-cholesterol", "Холестерин ЛПВП", "mmol/L"),
-    MetricDefinition("triglycerides", "Триглицериды", "mmol/L"),
-    MetricDefinition("potassium", "Калий", "mmol/L"),
-    MetricDefinition("oxygen-saturation", "Сатурация кислорода", "%"),
-    MetricDefinition("body-temperature", "Температура тела", "Cel"),
-)
-_DEFINITIONS = {item.code: item for item in METRICS}
+from .measurements import DIRECT_DEFINITIONS, DIRECT_METRICS, metric_code, normalize_unit
 
 
 def build_metric_series(record: PatientRecord) -> list[MetricSeries]:
     points: dict[str, list[MetricPoint]] = {
-        definition.code: [] for definition in METRICS
+        definition.code: [] for definition in DIRECT_METRICS
     }
     for observation in record.observations:
         _collect_scalar(points, observation)
@@ -53,7 +31,7 @@ def build_metric_series(record: PatientRecord) -> list[MetricSeries]:
             )
 
     result: list[MetricSeries] = []
-    for definition in METRICS:
+    for definition in DIRECT_METRICS:
         series_points = points[definition.code]
         if not series_points:
             continue
@@ -71,6 +49,7 @@ def build_metric_series(record: PatientRecord) -> list[MetricSeries]:
                 points=series_points,
             )
         )
+    result.extend(_build_calculated_series(record))
     return result
 
 
@@ -96,66 +75,82 @@ def _collect_value(
 ) -> None:
     if observation.observed_at is None or not isinstance(quantity.value, (int, float)):
         return
-    metric_code = _metric_code(coding)
-    if metric_code is None:
+    code = metric_code(coding)
+    if code is None:
         return
-    definition = _DEFINITIONS[metric_code]
-    unit = _normalize_unit(quantity.unit)
-    if unit is not None and unit != definition.unit:
+    definition = DIRECT_DEFINITIONS[code]
+    unit = normalize_unit(quantity.unit)
+    if unit != definition.unit:
         return
-    points[metric_code].append(
+    points[code].append(
         MetricPoint(
             observed_at=observation.observed_at,
             value=float(quantity.value),
             source_category=observation.category,
             encounter_id=observation.encounter_id,
+            source_ids=[observation.id],
+            interpretation=_direct_interpretation(code, float(quantity.value)),
         )
     )
 
 
-def _metric_code(coding: Coding) -> str | None:
-    code = (coding.code or "").casefold()
-    if code in _DEFINITIONS:
-        return code
-    display = coding.display.casefold().replace("ё", "е").strip()
-    if "глюкоз" in display and "моч" not in display:
-        return "glucose"
-    if "hba1c" in display or "гликирован" in display:
-        return "hba1c"
-    if "креатинин" in display and "моч" not in display and "альбумин" not in display:
-        return "creatinine"
-    if display in {"холестерин общий", "общий холестерин", "total cholesterol"}:
-        return "total-cholesterol"
-    if "лпнп" in display or "ldl" in display:
-        return "ldl-cholesterol"
-    if "лпвп" in display or "hdl" in display:
-        return "hdl-cholesterol"
-    if "триглицерид" in display:
-        return "triglycerides"
-    if display in {"калий", "potassium"}:
-        return "potassium"
-    return None
+def _build_calculated_series(record: PatientRecord) -> list[MetricSeries]:
+    grouped: dict[str, list[CalculatedValue]] = {}
+    definitions: dict[str, CalculatorDefinition] = {}
+    for item in calculate_record_metrics(record):
+        grouped.setdefault(item.definition.code, []).append(item)
+        definitions[item.definition.code] = item.definition
+
+    result: list[MetricSeries] = []
+    for code, calculated_values in grouped.items():
+        values = sorted(
+            calculated_values,
+            key=lambda item: chronological_key(item.observed_at),
+        )
+        definition = definitions[code]
+        result.append(
+            MetricSeries(
+                code=definition.code,
+                display=definition.display,
+                unit=definition.unit,
+                points=[
+                    MetricPoint(
+                        observed_at=item.observed_at,
+                        value=item.value,
+                        source_category="calculated",
+                        source_ids=list(item.source_ids),
+                        calculation_inputs=[
+                            {
+                                "display": input_value.display,
+                                "value": input_value.value,
+                                "unit": input_value.unit,
+                                "source_id": input_value.source_id,
+                            }
+                            for input_value in item.inputs
+                        ],
+                        interpretation=item.interpretation,
+                    )
+                    for item in values
+                ],
+                calculation=CalculationInfo(
+                    code=definition.code,
+                    description=definition.description,
+                    inputs=list(definition.inputs),
+                    purpose=definition.purpose,
+                    method=definition.method,
+                    standard=definition.standard,
+                    limitations=list(definition.limitations),
+                    references=list(definition.references),
+                ),
+            )
+        )
+    return result
 
 
-def _normalize_unit(unit: str | None) -> str | None:
-    if unit is None:
+def _direct_interpretation(code: str, value: float) -> str | None:
+    if code != "urine-albumin-creatinine-ratio":
         return None
-    normalized = unit.casefold().replace(" ", "").replace("μ", "µ")
-    aliases = {
-        "ммоль/л": "mmol/L",
-        "mmol/l": "mmol/L",
-        "мкмоль/л": "µmol/L",
-        "µmol/l": "µmol/L",
-        "ммрт.ст.": "mmHg",
-        "mmhg": "mmHg",
-        "уд/мин": "beats/min",
-        "beats/min": "beats/min",
-        "кг": "kg",
-        "kg": "kg",
-        "кг/м2": "kg/m2",
-        "kg/m2": "kg/m2",
-        "%": "%",
-        "cel": "Cel",
-        "°c": "Cel",
-    }
-    return aliases.get(normalized, unit)
+    try:
+        return classify_albuminuria_category(value)
+    except ValueError:
+        return None

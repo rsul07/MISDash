@@ -211,6 +211,15 @@ def _add_metric(builder: _ContextBuilder, metric: MetricSeries) -> None:
         ("последнее значение", f"{latest.value:g}{unit} от {_iso_date(latest.observed_at)}"),
         ("измерений за последние 12 месяцев", len(recent)),
     ]
+    if metric.calculation is not None:
+        parts.extend(
+            (
+                ("тип значения", "рассчитано детерминированным кодом"),
+                ("метод расчёта", metric.calculation.method),
+            )
+        )
+    if latest.interpretation is not None:
+        parts.append(("категория показателя", latest.interpretation))
     if recent and previous:
         recent_mean = sum(point.value for point in recent) / len(recent)
         previous_mean = sum(point.value for point in previous) / len(previous)

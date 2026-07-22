@@ -4,6 +4,7 @@ sequenceDiagram
     participant UI as Streamlit UI
     participant Parser as MISParser
     participant Backend as DashboardService
+    participant Calc as Clinical calculators
     participant Summary as SummaryService
     participant Gemini as Gemini API
 
@@ -12,6 +13,8 @@ sequenceDiagram
     Parser->>Parser: нормализация и формирование PatientRecord
     Parser-->>UI: PatientRecord v1
     UI->>Backend: build(record)
+    Backend->>Calc: Рассчитать eGFR, липиды и пульсовое давление
+    Calc-->>Backend: Значения + метод + source_ids
     Backend->>Backend: профиль, метрики, лента приёмов
     Backend-->>UI: DashboardResponse v1
     UI-->>Doctor: детерминированные разделы дашборда

@@ -13,6 +13,7 @@
 - [Parser](parser.md) — разбор грязной выгрузки и канонизация;
 - [Контракты данных](data_contract.md) — `PatientRecord v1` и границы данных;
 - [Backend](backend.md) — построение `DashboardResponse v1`;
+- [Клинические калькуляторы](calculators.md) — формулы, стандарты и ограничения;
 - [Frontend](frontend.md) — Streamlit-интерфейс и заметки по его развитию;
 - [Summarizer](summarizer.md) — подготовка контекста и работа с Gemini.
 

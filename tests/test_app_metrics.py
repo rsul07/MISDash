@@ -9,6 +9,8 @@ import pytest
 
 from src.app.components import metrics as component
 from src.contracts.dashboard.v1 import (
+    CalculationInfo,
+    CalculationInput,
     DashboardPatient,
     DashboardResponse,
     MetricPoint,
@@ -106,6 +108,76 @@ def test_metrics_handle_missing_series_and_empty_points(
     streamlit.info.assert_called_once_with(
         "Нет данных для отображения динамики показателей."
     )
+
+
+def test_metrics_render_backend_calculation_explanation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    streamlit = MagicMock()
+    streamlit.tabs.return_value = [_Tab(open=True)]
+    monkeypatch.setattr(component, "st", streamlit)
+    calculated = _series("pulse-pressure", "Пульсовое давление", "mmHg", 60)
+    calculated.calculation = CalculationInfo(
+        code="pulse-pressure",
+        description="Разница между САД и ДАД.",
+        inputs=["САД", "ДАД"],
+        purpose="Показать динамику.",
+        method="SBP - DBP",
+        standard="ESC 2024",
+        limitations=["Не является прямым измерением жёсткости артерий."],
+        references=["https://example.test/standard"],
+    )
+    calculated.points[0].calculation_inputs = [
+        CalculationInput(
+            display="Систолическое АД",
+            value=140,
+            unit="mmHg",
+            source_id="bp-1",
+        ),
+        CalculationInput(
+            display="Диастолическое АД",
+            value=80,
+            unit="mmHg",
+            source_id="bp-1",
+        ),
+    ]
+
+    component.render_metrics(_dashboard(calculated))
+
+    streamlit.expander.assert_called_once_with(
+        "Как рассчитан показатель «Пульсовое давление»"
+    )
+    markdown = [call.args[0] for call in streamlit.markdown.call_args_list]
+    assert "**Метод:** SBP - DBP" in markdown
+    assert any("Не является прямым измерением" in item for item in markdown)
+    assert "**Пример по данным пациента от 01.01.2024:**" in markdown
+    assert "- Систолическое АД: 140 mmHg · источник `bp-1`" in markdown
+    assert "**Результат:** 60 mmHg" in markdown
+
+
+def test_metric_groups_include_calculated_backend_codes() -> None:
+    groups = {group.key: group.codes for group in component.METRIC_GROUPS}
+
+    assert "pulse-pressure" in groups["blood-pressure"]
+    assert "egfr-ckd-epi-2021" in groups["kidneys"]
+    assert "urine-albumin-creatinine-ratio" in groups["kidneys"]
+    assert "non-hdl-cholesterol" in groups["lipids"]
+    assert "calculated-ldl-cholesterol" in groups["lipids"]
+
+
+def test_metric_hover_shows_backend_interpretation() -> None:
+    series = _series(
+        "egfr-ckd-epi-2021",
+        "Расчётная СКФ",
+        "mL/min/1.73m2",
+        44.9,
+    )
+    series.points[0].interpretation = "G3b"
+
+    figure = component._build_figure(series.unit, [series])
+
+    assert "Категория: %{customdata[1]}" in figure.data[0].hovertemplate
+    assert list(figure.data[0].customdata[0]) == ["laboratory", "G3b"]
 
 
 def _dashboard(*metrics: MetricSeries) -> DashboardResponse:
