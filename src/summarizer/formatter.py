@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from .models import ClinicalSummary, SummaryItem
+from src.contracts.summarizer.v1 import ClinicalSummary, SummaryItem
 
 
 _SECTIONS = (

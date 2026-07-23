@@ -4,11 +4,12 @@ from __future__ import annotations
 
 from src.contracts.dashboard.v1 import DashboardResponse
 from src.contracts.patient.v1 import PatientRecord
+from src.contracts.summarizer.v1 import ClinicalSummary, SummaryItem
 
 from .client import SummaryClient
 from .context import ContextLimits, build_summary_context
 from .errors import InsufficientClinicalDataError, InvalidSummaryError
-from .models import ClinicalSummary, SummaryContext, SummaryItem
+from .models import SummaryContext
 
 
 class SummaryService:
