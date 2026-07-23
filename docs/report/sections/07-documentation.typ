@@ -10,16 +10,17 @@ streamlit run src/app/main.py
 
 После загрузки JSON-файла интерфейс показывает профиль, заболевания, терапию,
 графики показателей и ленту приёмов. ИИ-сводка формируется только после нажатия
-кнопки. Локальная конфигурация читается из `.env`: выходная директория задаётся
-переменной `OUTPUT_DIR`, а для сводки можно указать `GEMINI_API_KEY`. Отсутствие
-ключа не блокирует остальные функции. Секреты и локальные результаты не
-сохраняются в Git.
+кнопки. Для сводки в локальном `.env` можно указать `GEMINI_API_KEY`; отсутствие
+ключа не блокирует остальные функции. `OUTPUT_DIR` используется только при
+явном сохранении через `MISParser.parse()` и не влияет на загруженный в
+Streamlit файл. Секреты и локальные результаты не сохраняются в Git.
 
 == Документация разработчика
 
 Разработчику доступны отдельные документы по parser, контракту данных, backend,
 frontend, summarizer и workflow. Архитектурные диаграммы хранятся вместе с
-отчётом. Источником истины при расхождении являются Pydantic-контракты и тесты.
+технической документацией в `docs/diagrams` и повторно используются в этом
+отчёте. Источником истины при расхождении являются Pydantic-контракты и тесты.
 Изменение публичного поведения должно сопровождаться обновлением
 соответствующей документации.
 
@@ -27,11 +28,13 @@ frontend, summarizer и workflow. Архитектурные диаграммы 
 
 ```text
 src/parser       -> src/contracts/patient
+src/parser       -> src/storage (только для parse)
 src/storage      -> src/contracts/patient
-src/backend      -> src/contracts/patient
-src/backend      -> src/contracts/dashboard
-src/app          -> src/backend, src/contracts/dashboard
-src/summarizer   -> src/contracts/patient, Gemini API
+src/calculators  -> примитивные типы
+src/backend      -> contracts/patient, contracts/dashboard, calculators
+src/summarizer   -> contracts/patient, contracts/dashboard,
+                    contracts/summarizer, Gemini API
+src/app          -> parser, backend, summarizer и их контракты
 ```
 
 Parser не импортирует backend или UI, а frontend не обращается к адаптерам
@@ -43,20 +46,21 @@ Parser не импортирует backend или UI, а frontend не обра�
 имеет следующую логическую схему:
 
 ```text
-PatientRecord v1
+PatientRecord 1.0
+├── schema_version = "1.0"
 ├── patient
+├── social_history?
+├── family_history[]
 ├── allergies[]
 ├── conditions[]
-├── social_history
-├── family_history[]
 ├── encounters[]
-├── diagnoses[]
+│   └── diagnoses[]
 ├── medications[]
 ├── observations[]
 ├── procedures[]
 ├── hospitalizations[]
 ├── immunizations[]
-└── reports[]
+└── diagnostic_reports[]
 ```
 
 Сохранение выполняется атомарно через временный файл с последующей заменой.

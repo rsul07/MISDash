@@ -36,5 +36,6 @@ SVG или PNG визуально и добавить в коммит и исх�
 ![Архитектура MIS Dash](diagrams/rendered/system-architecture.svg)
 ```
 
-Typst-отчёт подключает тот же SVG из `docs/diagrams/rendered/`; отдельные копии
-изображений рядом с отчётом создавать не нужно.
+Typst-отчёт подключает PNG из того же `docs/diagrams/rendered/`: Mermaid SVG
+использует `foreignObject`, который Typst может отобразить без текста. Отдельные
+копии изображений рядом с отчётом создавать не нужно.
