@@ -1,0 +1,32 @@
+flowchart LR
+    raw[(Исходный JSON<br/>≈250 тыс. строк)]
+
+    subgraph parser["src/parser"]
+        direction LR
+        engine["MISParser<br/><small>фасад</small>"]
+        builder["canonical/builder.py<br/><small>композиция PatientRecord</small>"]
+        adapters["<b>Адаптеры блоков JSON</b><br/>patient.py · social.py · encounters.py<br/>observations/* · history.py"]
+        support["<b>Общие механизмы</b><br/>records.py · normalizers.py · canonical/common.py<br/>canonical/dates.py · extractors.py"]
+
+        engine --> adapters --> builder
+        support -. "правила чтения и нормализации" .-> adapters
+    end
+
+    contract["PatientRecord 1.0<br/><small>strict Pydantic contract</small>"]
+    storage_module["src/storage/patient_records.py<br/><small>валидация и атомарная запись</small>"]
+    storage[(patient_record.json<br/>опционально)]
+
+    raw --> engine
+    builder --> contract
+    contract -. "parse(): save" .-> storage_module --> storage
+
+    classDef input fill:#fff7ed,stroke:#f59e0b,color:#7c2d12,stroke-width:2px;
+    classDef facade fill:#e0f2fe,stroke:#0284c7,color:#0c4a6e,stroke-width:2px;
+    classDef support fill:#f8fafc,stroke:#94a3b8,color:#334155;
+    classDef adapter fill:#ecfdf5,stroke:#10b981,color:#064e3b;
+    classDef contract fill:#f3e8ff,stroke:#9333ea,color:#581c87,stroke-width:2px;
+    class raw input;
+    class engine,builder facade;
+    class support,storage_module support;
+    class adapters adapter;
+    class contract,storage contract;
