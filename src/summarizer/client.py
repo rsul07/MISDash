@@ -6,9 +6,11 @@ from typing import Any, Protocol
 
 from pydantic import ValidationError
 
+from src.contracts.summarizer.v1 import ClinicalSummary
+
 from .config import SummarySettings
 from .errors import InvalidSummaryError, MissingApiKeyError, SummaryProviderError
-from .models import ClinicalSummary, SummaryContext
+from .models import SummaryContext
 from .prompt import build_prompt
 
 

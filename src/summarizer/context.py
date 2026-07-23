@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from typing import Iterable
 
-from src.contracts.dashboard.v1 import DashboardResponse, MetricSeries
+from src.contracts.dashboard.v1 import DashboardResponse
 from src.contracts.patient.v1 import DiagnosticReport, Encounter, PatientRecord
 
 from .models import ContextFact, FactKind, SummaryContext
@@ -47,7 +47,7 @@ class _ContextBuilder:
         kind: FactKind,
         parts: Iterable[tuple[str, object]],
         *,
-        occurred_at: date | datetime | None = None,
+        occurred_at: date | datetime | str | None = None,
         visible_on_dashboard: bool = False,
     ) -> None:
         text_parts: list[str] = []
@@ -124,7 +124,11 @@ def build_summary_context(
             visible_on_dashboard=True,
         )
 
-    encounters = sorted(record.encounters, key=_encounter_key, reverse=True)
+    encounters = sorted(
+        (encounter for encounter in record.encounters if _has_encounter_text(encounter)),
+        key=_encounter_key,
+        reverse=True,
+    )
     builder.omitted_records += max(0, len(encounters) - limits.encounters)
     for encounter in encounters[: limits.encounters]:
         _add_encounter(builder, encounter)
@@ -142,34 +146,20 @@ def build_summary_context(
     for report in reports[: limits.diagnostic_reports]:
         _add_report(builder, report)
 
-    for metric in dashboard.metrics:
-        _add_metric(builder, metric)
-
     return builder.result()
 
 
 def _add_encounter(builder: _ContextBuilder, encounter: Encounter) -> None:
-    diagnoses = ", ".join(
-        filter(
-            None,
-            (
-                f"{diagnosis.coding.display} ({diagnosis.coding.code})"
-                if diagnosis.coding.code
-                else diagnosis.coding.display
-                for diagnosis in encounter.diagnoses
-            ),
-        )
-    )
+    follow_up = encounter.follow_up_at or encounter.follow_up_at_text
     builder.add(
         f"encounter:{encounter.id}",
         "encounter",
         (
-            ("специалист", encounter.practitioner.specialty),
             ("жалобы", encounter.complaints),
             ("анамнез", encounter.history),
-            ("объективно", encounter.objective),
-            ("диагнозы", diagnoses),
+            ("объективный статус", encounter.objective),
             ("план", encounter.plan),
+            ("повторный приём", follow_up),
         ),
         occurred_at=encounter.occurred_at,
     )
@@ -183,61 +173,20 @@ def _add_report(builder: _ContextBuilder, report: DiagnosticReport) -> None:
             ("исследование", report.coding.display),
             ("заключение", report.conclusion),
         ),
-        occurred_at=report.effective_at or report.issued_at,
+        occurred_at=_report_date(report),
     )
 
 
-def _add_metric(builder: _ContextBuilder, metric: MetricSeries) -> None:
-    if not metric.points:
-        return
-    points = sorted(metric.points, key=lambda item: _date_key(item.observed_at))
-    latest = points[-1]
-    latest_date = _as_date(latest.observed_at)
-    recent_start = latest_date - timedelta(days=365)
-    previous_start = latest_date - timedelta(days=730)
-    recent = [
-        point
-        for point in points
-        if recent_start < _as_date(point.observed_at) <= latest_date
-    ]
-    previous = [
-        point
-        for point in points
-        if previous_start < _as_date(point.observed_at) <= recent_start
-    ]
-    unit = f" {metric.unit}" if metric.unit else ""
-    parts: list[tuple[str, object]] = [
-        ("показатель", metric.display),
-        ("последнее значение", f"{latest.value:g}{unit} от {_iso_date(latest.observed_at)}"),
-        ("измерений за последние 12 месяцев", len(recent)),
-    ]
-    if metric.calculation is not None:
-        parts.extend(
-            (
-                ("тип значения", "рассчитано детерминированным кодом"),
-                ("метод расчёта", metric.calculation.method),
-            )
+def _has_encounter_text(encounter: Encounter) -> bool:
+    return any(
+        (
+            encounter.complaints,
+            encounter.history,
+            encounter.objective,
+            encounter.plan,
+            encounter.follow_up_at,
+            encounter.follow_up_at_text,
         )
-    if latest.interpretation is not None:
-        parts.append(("категория показателя", latest.interpretation))
-    if recent and previous:
-        recent_mean = sum(point.value for point in recent) / len(recent)
-        previous_mean = sum(point.value for point in previous) / len(previous)
-        delta = recent_mean - previous_mean
-        parts.extend(
-            (
-                ("среднее за последние 12 месяцев", f"{recent_mean:.2f}{unit}"),
-                ("среднее за предыдущие 12 месяцев", f"{previous_mean:.2f}{unit}"),
-                ("изменение средних", f"{delta:+.2f}{unit}"),
-                ("измерений в предыдущем периоде", len(previous)),
-            )
-        )
-    else:
-        parts.append(("сравнение периодов", "недостаточно данных"))
-    builder.add(
-        f"metric:{metric.code}",
-        "metric",
-        parts,
     )
 
 
@@ -245,19 +194,26 @@ def _encounter_key(encounter: Encounter) -> tuple[str, str]:
     return (_date_key(encounter.occurred_at), encounter.id)
 
 
-def _report_key(report: DiagnosticReport) -> tuple[str, str]:
-    return (_date_key(report.effective_at or report.issued_at), report.id)
+def _report_key(report: DiagnosticReport) -> tuple[bool, str, str]:
+    parsed_date = report.effective_at or report.issued_at
+    return (
+        parsed_date is not None,
+        _date_key(parsed_date) if parsed_date is not None else report.effective_at_text or "",
+        report.id,
+    )
+
+
+def _report_date(report: DiagnosticReport) -> date | datetime | str | None:
+    return report.effective_at or report.issued_at or report.effective_at_text
 
 
 def _date_key(value: date | datetime | None) -> str:
     return _iso_date(value) or ""
 
 
-def _iso_date(value: date | datetime | None) -> str | None:
+def _iso_date(value: date | datetime | str | None) -> str | None:
     if value is None:
         return None
+    if isinstance(value, str):
+        return value
     return value.isoformat()
-
-
-def _as_date(value: date | datetime) -> date:
-    return value.date() if isinstance(value, datetime) else value

@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-from .models import ClinicalSummary, SummaryItem
+from src.contracts.summarizer.v1 import ClinicalSummary, SummaryItem
 
 
 _SECTIONS = (
-    ("Что изменилось", "recent_changes"),
-    ("Неочевидные находки", "important_findings"),
-    ("Нерешённые вопросы", "unresolved_issues"),
-    ("К ближайшему приёму", "next_visit_focus"),
+    ("Динамика симптомов", "symptom_trajectory"),
+    ("Важные результаты осмотров и исследований", "textual_findings"),
+    ("Незавершённые планы и вопросы", "open_loops"),
 )
 
 

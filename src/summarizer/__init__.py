@@ -1,5 +1,7 @@
 """Public API for traceable clinical summaries."""
 
+from src.contracts.summarizer.v1 import ClinicalSummary, SummaryItem
+
 from .client import GeminiSummaryClient, SummaryClient
 from .config import DEFAULT_GEMINI_MODEL, SummarySettings
 from .context import ContextLimits, build_summary_context
@@ -11,7 +13,7 @@ from .errors import (
     SummaryProviderError,
 )
 from .formatter import format_summary
-from .models import ClinicalSummary, ContextFact, SummaryContext, SummaryItem
+from .models import ContextFact, SummaryContext
 from .service import SummaryService
 
 __all__ = [

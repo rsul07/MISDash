@@ -4,11 +4,12 @@ from __future__ import annotations
 
 from src.contracts.dashboard.v1 import DashboardResponse
 from src.contracts.patient.v1 import PatientRecord
+from src.contracts.summarizer.v1 import ClinicalSummary, SummaryItem
 
 from .client import SummaryClient
 from .context import ContextLimits, build_summary_context
 from .errors import InsufficientClinicalDataError, InvalidSummaryError
-from .models import ClinicalSummary, SummaryContext, SummaryItem
+from .models import SummaryContext
 
 
 class SummaryService:
@@ -58,19 +59,17 @@ def _keep_traceable_items(
         return result
 
     return ClinicalSummary(
-        recent_changes=valid(summary.recent_changes),
-        important_findings=valid(summary.important_findings),
-        unresolved_issues=valid(summary.unresolved_issues),
-        next_visit_focus=valid(summary.next_visit_focus),
+        symptom_trajectory=valid(summary.symptom_trajectory),
+        textual_findings=valid(summary.textual_findings),
+        open_loops=valid(summary.open_loops),
     )
 
 
 def _has_items(summary: ClinicalSummary) -> bool:
     return any(
         (
-            summary.recent_changes,
-            summary.important_findings,
-            summary.unresolved_issues,
-            summary.next_visit_focus,
+            summary.symptom_trajectory,
+            summary.textual_findings,
+            summary.open_loops,
         )
     )
