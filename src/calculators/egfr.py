@@ -20,12 +20,16 @@ EGFR_CKD_EPI_2021 = CalculatorDefinition(
         "изменения, требующие клинической оценки."
     ),
     method="2021 CKD-EPI creatinine equation",
-    standard="CKD-EPI 2021; применяется в KDIGO 2024 для взрослых",
+    standard=(
+        "CKD-EPI 2021; приведено KDIGO 2024 среди валидированных "
+        "уравнений для взрослых"
+    ),
     limitations=(
         "Применяется только с 18 лет.",
         "Это оценка, а не прямое измерение функции почек.",
         "Точность снижается при нестабильном креатинине и необычной мышечной массе.",
         "Одно значение не устанавливает диагноз хронической болезни почек.",
+        "Клинические ограничения формулы backend автоматически не определяет.",
     ),
     references=(
         "https://www.niddk.nih.gov/research-funding/research-programs/"
@@ -33,7 +37,7 @@ EGFR_CKD_EPI_2021 = CalculatorDefinition(
         "glomerular-filtration-rate-equations/adults",
         "https://kdigo.org/wp-content/uploads/2024/03/"
         "KDIGO-2024-CKD-Guideline.pdf",
-        "https://www.nejm.org/doi/10.1056/NEJMoa2102953",
+        "https://doi.org/10.1056/NEJMoa2102953",
     ),
 )
 

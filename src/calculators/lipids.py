@@ -25,8 +25,8 @@ NON_HDL_CHOLESTEROL = CalculatorDefinition(
     ),
     method="Non-HDL-C = total cholesterol - HDL-C",
     standard=(
-        "Входит в стандартный липидный профиль и используется в ESC/EAS 2025 "
-        "и AHA/ACC 2026 как показатель атерогенного холестерина"
+        "Используется в ESC/EAS 2019 с focused update 2025 и ACC/AHA 2026 "
+        "как показатель атерогенного холестерина"
     ),
     limitations=(
         "Компоненты должны относиться к одной пробе и иметь совместимые единицы.",
@@ -34,8 +34,9 @@ NON_HDL_CHOLESTEROL = CalculatorDefinition(
         "Показатель не заменяет клиническую оценку или измерение apoB.",
     ),
     references=(
+        "https://doi.org/10.1093/eurheartj/ehz455",
         "https://academic.oup.com/eurheartj/article/46/42/4359/8234482",
-        "https://www.ahajournals.org/doi/10.1161/CIR.0000000000001423",
+        "https://doi.org/10.1161/CIR.0000000000001423",
     ),
 )
 
@@ -58,7 +59,7 @@ SAMPSON_LDL_CHOLESTEROL = CalculatorDefinition(
     ),
     method="Sampson-NIH equation 2 (2020)",
     standard=(
-        "Sampson/NIH — один из методов, предпочитаемых AHA/ACC 2026 формуле "
+        "Sampson/NIH — один из методов, предпочитаемых ACC/AHA 2026 формуле "
         "Friedewald для расчётного ЛПНП"
     ),
     limitations=(
@@ -68,8 +69,8 @@ SAMPSON_LDL_CHOLESTEROL = CalculatorDefinition(
         "Не применяется при неизвестных единицах или неполной липидограмме.",
     ),
     references=(
-        "https://jamanetwork.com/journals/jamacardiology/fullarticle/2761953",
-        "https://www.ahajournals.org/doi/10.1161/CIR.0000000000001423",
+        "https://doi.org/10.1001/jamacardio.2020.0013",
+        "https://doi.org/10.1161/CIR.0000000000001423",
     ),
 )
 
