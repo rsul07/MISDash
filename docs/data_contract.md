@@ -158,8 +158,12 @@ Pydantic запрещает неизвестные поля (`extra="forbid"`), 
 
 Дата может быть `date` или `datetime`. Parser сохраняет время, когда оно
 известно, и не создаёт ложную точность. Например, строка `2017` не становится
-`2017-01-01`: нормализованное поле остаётся пустым, а исходное значение
-сохраняется в соответствующем `*_at_text`.
+`2017-01-01`: нормализованное поле остаётся пустым. Исходное значение
+дополнительно сохраняется только в предусмотренных схемой полях
+`follow_up_at_text`, `performed_at_text`, `admitted_at_text`,
+`discharged_at_text`, `administered_at_text` и `effective_at_text`. У
+`Patient.birth_date`, `Condition.onset` и `Encounter.occurred_at` парного
+текстового поля нет.
 
 ### Реализованные адаптеры
 
@@ -222,7 +226,7 @@ DashboardResponse
 
 - `PatientRecord` требует точное `schema_version: "1.0"`;
 - `DashboardResponse` требует точное `schema_version: "1.1"`;
-- `ClinicalSummary` находится в `contracts/summarizer/v1`, но отдельного поля
+- `ClinicalSummary` находится в `src/contracts/summarizer/v1`, но отдельного поля
   `schema_version` не имеет; совместно с ним версионируется prompt через
   `PROMPT_VERSION`.
 

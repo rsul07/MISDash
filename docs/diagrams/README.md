@@ -30,7 +30,8 @@ SVG или PNG визуально и добавить в коммит и исх�
 
 ## Использование
 
-В Markdown предпочтителен SVG:
+В Markdown предпочтителен SVG. Например, для файла, который лежит
+непосредственно в `docs/`, ссылка выглядит так:
 
 ```markdown
 ![Архитектура MIS Dash](diagrams/rendered/system-architecture.svg)

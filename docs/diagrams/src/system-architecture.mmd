@@ -1,4 +1,4 @@
-flowchart TB
+flowchart LR
     doctor["Врач"]
     mis["JSON-выгрузка МИС"]
     gemini["Gemini API"]
@@ -30,7 +30,8 @@ flowchart TB
             direction LR
             summary["src/summarizer<br/><b>SummaryService</b><br/><small>ограниченный текстовый контекст</small>"]
             clinical["src/contracts/summarizer/v1<br/><b>ClinicalSummary</b><br/><small>structured output</small>"]
-            summary --> clinical
+            summary_ui["src/app/summary.py<br/><b>Форматирование Markdown</b><br/><small>обновление DashboardResponse.ai_summary</small>"]
+            summary --> clinical --> summary_ui
         end
 
         views["src/app<br/><b>Экраны Streamlit</b><br/><small>профиль · динамика · приёмы · ИИ-сводка</small>"]
@@ -43,7 +44,7 @@ flowchart TB
         record -. "тексты приёмов и заключений" .-> summary
         response -. "факты профиля" .-> summary
         response --> views
-        clinical --> views
+        summary_ui --> views
     end
 
     mis -->|"формирует выгрузку"| doctor
@@ -57,7 +58,7 @@ flowchart TB
     classDef ai fill:#ecfdf5,stroke:#059669,color:#064e3b,stroke-width:2px;
     classDef external fill:#e2e8f0,stroke:#64748b,color:#0f172a,stroke-width:2px;
     class doctor person;
-    class upload,views,parser,backend,selection,calculators module;
+    class upload,views,summary_ui,parser,backend,selection,calculators module;
     class record,response,storage,clinical contract;
     class summary ai;
     class mis,gemini external;

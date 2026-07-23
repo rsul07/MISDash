@@ -1,7 +1,7 @@
 # Модуль `parser`: устройство и поток данных
 
 `src/parser` преобразует грязную JSON-выгрузку МИС в единственный
-канонический контракт `PatientRecord v1`. Parser не строит представления
+канонический контракт `PatientRecord 1.0`. Parser не строит представления
 конкретного экрана и не выполняет необратимую дневную агрегацию.
 
 ## Публичный API
@@ -37,9 +37,9 @@ print(paths["patient_record"])
 ![Компоненты parser](diagrams/rendered/parser-components.svg)
 
 `engine.py` — тонкий фасад. Вся mapping-логика разделена по клиническим
-доменам и композируется только в `canonical/builder.py`. Схема показывает
-поток данных, а не порядок Python-вызовов: builder вызывает адаптеры и собирает
-их результаты в корневую модель.
+доменам и композируется только в `canonical/builder.py`. Сплошные стрелки на
+схеме показывают основной путь построения контракта, пунктирные — внутренние
+зависимости builder и адаптеров.
 
 ### Ответственность модулей
 
@@ -50,7 +50,7 @@ print(paths["patient_record"])
 | `normalizers.py` | Даты, числа, текст и физиологическая валидация. |
 | `records.py` | Безопасный доступ, альтернативные имена, keyed-коллекции, дубли приёмов. |
 | `extractors.py` | Детерминированное извлечение АД и ЧСС из текста. |
-| `canonical/common.py` | `SourceReference`, внутренние ID и сохранение исходного текста неточной даты. |
+| `canonical/common.py` | `SourceReference`, внутренние ID и сохранение исходного текста неточной даты для полей с парным `*_at_text`. |
 | `canonical/dates.py` | Клинические `date`/`datetime`, Unix timestamp и контроль точности даты. |
 | `canonical/patient.py` | Пациент, аллергии и хронические состояния. |
 | `canonical/social.py` | Образ жизни и семейный анамнез. |
@@ -67,7 +67,7 @@ sequenceDiagram
     actor Client as Клиент
     participant Parser as MISParser
     participant Builder as canonical/builder.py
-    participant Contract as PatientRecord v1
+    participant Contract as PatientRecord 1.0
     participant FS as Файловая система
 
     Client->>Parser: parse_record()
@@ -102,7 +102,11 @@ sequenceDiagram
 Даты поддерживают ISO, `DD.MM.YYYY`, `DD/MM/YYYY`, `YYYYMMDD`, варианты со
 временем и Unix timestamp. Canonical adapter сохраняет `datetime`, если время
 известно. Неполный год вроде `2017` не превращается в искусственное
-`2017-01-01`; исходный текст сохраняется рядом.
+`2017-01-01`. Исходный текст сохраняется в парном поле только там, где оно
+предусмотрено контрактом: для повторного приёма, процедуры, госпитализации,
+прививки и даты инструментального отчёта. Для даты рождения, начала состояния
+и даты самого приёма нераспознанное значение становится `None`: отдельных
+`birth_date_text`, `onset_text` и `occurred_at_text` в `PatientRecord 1.0` нет.
 
 Числа принимаются как `int`, `float` или строки с точкой/запятой. Булевы,
 бесконечные и составные строки числами не считаются.
