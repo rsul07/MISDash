@@ -30,7 +30,7 @@
 | [Backend](backend.md) | профиль, метрики и приёмы | `src/backend/` |
 | [Калькуляторы](calculators.md) | формулы, стандарты и ограничения | `src/calculators/`, `src/backend/calculations/` |
 | [Frontend](frontend.md) | Streamlit, Plotly и состояние сессии | `src/app/` |
-| [Summarizer](summarizer.md) | контекст, prompt, Gemini и валидация | `src/summarizer/`, `contracts/summarizer/` |
+| [Summarizer](summarizer.md) | контекст, prompt, Gemini и валидация | `src/summarizer/`, `src/contracts/summarizer/` |
 | [Диаграммы](diagrams/README.md) | Mermaid-исходники и SVG/PNG | архитектурные изменения |
 | [Отчёт](report/README.md) | сборка Typst и приватные шаблоны | `docs/report/sections/` |
 

@@ -105,7 +105,7 @@ mis_dash/
 │   └── report/           # Typst-отчёт и публичные шаблоны
 ├── src/
 │   ├── app/              # Streamlit-интерфейс
-│   ├── backend/          # построение DashboardResponse v1
+│   ├── backend/          # построение DashboardResponse 1.1
 │   ├── calculators/      # объяснимые медицинские формулы
 │   ├── contracts/        # PatientRecord, DashboardResponse, ClinicalSummary
 │   ├── parser/           # разбор и нормализация выгрузки МИС

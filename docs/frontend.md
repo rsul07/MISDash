@@ -1,6 +1,6 @@
 # Frontend MIS Dash
 
-`src/app` — тонкий Streamlit-слой над `DashboardResponse v1`. Он отвечает за
+`src/app` — тонкий Streamlit-слой над `DashboardResponse 1.1`. Он отвечает за
 загрузку файла, композицию экранов и состояние интерфейса, но не разбирает поля
 исходной МИС и не вычисляет медицинские показатели.
 
@@ -28,9 +28,9 @@ streamlit run src/app/main.py
 Загруженный JSON
     -> src/app/data.py
     -> MISParser
-    -> PatientRecord v1
+    -> PatientRecord 1.0
     -> DashboardService
-    -> DashboardResponse v1
+    -> DashboardResponse 1.1
     -> компоненты Streamlit
 ```
 
