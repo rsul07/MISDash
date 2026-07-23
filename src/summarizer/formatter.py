@@ -9,7 +9,7 @@ _SECTIONS = (
     ("Динамика симптомов", "symptom_trajectory"),
     ("Приверженность и поведение", "compliance_and_behavior"),
     ("Текстовые находки", "textual_findings"),
-    ("Незавершённые вопросы", "open_loops"),
+    ("Незавершённые планы и вопросы", "open_loops"),
 )
 
 

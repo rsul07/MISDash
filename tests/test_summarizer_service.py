@@ -131,7 +131,7 @@ def test_service_rejects_response_without_traceable_items() -> None:
 def test_gemini_client_requests_structured_output_and_parses_it() -> None:
     output = ClinicalSummary(
         textual_findings=[
-            SummaryItem(text="Находка", source_ids=["condition:0"])
+            SummaryItem(text="Находка", source_ids=["report:report-1"])
         ]
     )
     calls: list[dict[str, object]] = []
@@ -148,9 +148,9 @@ def test_gemini_client_requests_structured_output_and_parses_it() -> None:
         SummaryContext(
             facts=[
                 {
-                    "source_id": "condition:0",
-                    "kind": "condition",
-                    "text": "диагноз: Гипертензия",
+                    "source_id": "report:report-1",
+                    "kind": "diagnostic_report",
+                    "text": "исследование: ЭКГ; заключение: Синусовый ритм",
                 }
             ]
         )
@@ -161,7 +161,11 @@ def test_gemini_client_requests_structured_output_and_parses_it() -> None:
     assert calls[0]["store"] is False
     response_format = calls[0]["response_format"]
     assert isinstance(response_format, dict)
-    assert response_format["mime_type"] == "application/json"
+    assert response_format == {
+        "type": "text",
+        "mime_type": "application/json",
+        "schema": ClinicalSummary.model_json_schema(),
+    }
     assert "patient_context" in str(calls[0]["input"])
 
 
@@ -180,7 +184,7 @@ def test_gemini_client_rejects_invalid_json() -> None:
 
 def test_summary_limits_each_section_to_three_items() -> None:
     items = [
-        SummaryItem(text=f"Изменение {index}", source_ids=[f"metric:{index}"])
+        SummaryItem(text=f"Симптом {index}", source_ids=[f"encounter:{index}"])
         for index in range(4)
     ]
 
@@ -244,5 +248,5 @@ def test_formatter_preserves_contract_sections() -> None:
     )
 
     assert "### Динамика симптомов\n\n- Головная боль стала реже" in markdown
-    assert "### Незавершённые вопросы" in markdown
+    assert "### Незавершённые планы и вопросы" in markdown
     assert "condition:0" not in markdown
