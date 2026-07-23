@@ -15,25 +15,25 @@ class SummaryItem(ContractModel):
 
 
 class ClinicalSummary(ContractModel):
-    """Non-duplicating insights that add information to the dashboard."""
+    """Narrative clinical insights grounded in unstructured source text."""
 
-    recent_changes: list[SummaryItem] = Field(
+    symptom_trajectory: list[SummaryItem] = Field(
         default_factory=list,
         max_length=3,
-        description="Dated clinical or metric changes, not static diagnoses.",
+        description="Dated evolution of symptoms documented in clinical text.",
     )
-    important_findings: list[SummaryItem] = Field(
+    compliance_and_behavior: list[SummaryItem] = Field(
         default_factory=list,
         max_length=3,
-        description="Important free-text findings not already visible on the dashboard.",
+        description="Explicit evidence about adherence and health-related behavior.",
     )
-    unresolved_issues: list[SummaryItem] = Field(
+    textual_findings: list[SummaryItem] = Field(
         default_factory=list,
         max_length=3,
-        description="Explicitly documented unresolved issues or follow-up needs.",
+        description="Non-numerical clinical and instrumental findings from source text.",
     )
-    next_visit_focus: list[SummaryItem] = Field(
+    open_loops: list[SummaryItem] = Field(
         default_factory=list,
         max_length=3,
-        description="Dated plan items to verify at the next visit, not new advice.",
+        description="Explicitly unfinished plans, pending actions, or follow-up questions.",
     )

@@ -81,7 +81,7 @@ def _dashboard(record: PatientRecord):
 def test_service_keeps_only_new_items_with_known_sources() -> None:
     client = FakeSummaryClient(
         ClinicalSummary(
-            important_findings=[
+            textual_findings=[
                 SummaryItem(
                     text="На последнем приёме отмечена утомляемость.",
                     source_ids=["encounter:visit-1"],
@@ -98,7 +98,7 @@ def test_service_keeps_only_new_items_with_known_sources() -> None:
 
     summary = SummaryService(client).summarize(record, _dashboard(record))
 
-    assert [item.text for item in summary.important_findings] == [
+    assert [item.text for item in summary.textual_findings] == [
         "На последнем приёме отмечена утомляемость."
     ]
     assert client.calls == 1
@@ -117,7 +117,7 @@ def test_service_does_not_call_provider_for_empty_context() -> None:
 def test_service_rejects_response_without_traceable_items() -> None:
     client = FakeSummaryClient(
         ClinicalSummary(
-            important_findings=[
+            textual_findings=[
                 SummaryItem(text="Нет источника", source_ids=["missing:1"])
             ]
         )
@@ -130,7 +130,7 @@ def test_service_rejects_response_without_traceable_items() -> None:
 
 def test_gemini_client_requests_structured_output_and_parses_it() -> None:
     output = ClinicalSummary(
-        important_findings=[
+        textual_findings=[
             SummaryItem(text="Находка", source_ids=["condition:0"])
         ]
     )
@@ -185,7 +185,7 @@ def test_summary_limits_each_section_to_three_items() -> None:
     ]
 
     with pytest.raises(ValidationError):
-        ClinicalSummary(recent_changes=items)
+        ClinicalSummary(symptom_trajectory=items)
 
 
 def test_missing_key_is_reported_before_sdk_initialization() -> None:
@@ -228,18 +228,21 @@ def test_gemini_client_explains_provider_errors(
 def test_formatter_preserves_contract_sections() -> None:
     markdown = format_summary(
         ClinicalSummary(
-            recent_changes=[
-                SummaryItem(text="HbA1c вырос", source_ids=["metric:hba1c"])
-            ],
-            next_visit_focus=[
+            symptom_trajectory=[
                 SummaryItem(
-                    text="В плане от 2026-01-01 указан контроль HbA1c",
+                    text="Головная боль стала реже",
+                    source_ids=["encounter:1", "encounter:2"],
+                )
+            ],
+            open_loops=[
+                SummaryItem(
+                    text="В плане от 2026-01-01 указана повторная консультация",
                     source_ids=["encounter:1"],
                 )
             ],
         )
     )
 
-    assert "### Что изменилось\n\n- HbA1c вырос" in markdown
-    assert "### К ближайшему приёму" in markdown
+    assert "### Динамика симптомов\n\n- Головная боль стала реже" in markdown
+    assert "### Незавершённые вопросы" in markdown
     assert "condition:0" not in markdown

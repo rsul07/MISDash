@@ -59,19 +59,19 @@ def _keep_traceable_items(
         return result
 
     return ClinicalSummary(
-        recent_changes=valid(summary.recent_changes),
-        important_findings=valid(summary.important_findings),
-        unresolved_issues=valid(summary.unresolved_issues),
-        next_visit_focus=valid(summary.next_visit_focus),
+        symptom_trajectory=valid(summary.symptom_trajectory),
+        compliance_and_behavior=valid(summary.compliance_and_behavior),
+        textual_findings=valid(summary.textual_findings),
+        open_loops=valid(summary.open_loops),
     )
 
 
 def _has_items(summary: ClinicalSummary) -> bool:
     return any(
         (
-            summary.recent_changes,
-            summary.important_findings,
-            summary.unresolved_issues,
-            summary.next_visit_focus,
+            summary.symptom_trajectory,
+            summary.compliance_and_behavior,
+            summary.textual_findings,
+            summary.open_loops,
         )
     )
