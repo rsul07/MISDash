@@ -82,6 +82,133 @@ def test_context_marks_dashboard_facts_as_already_visible() -> None:
     assert context.facts[0].visible_on_dashboard is True
 
 
+def test_context_projects_dated_encounter_text_with_stable_source_ids() -> None:
+    older = Encounter(
+        id="visit-older",
+        source=SOURCE,
+        occurred_at=date(2025, 11, 10),
+        complaints="Одышка при подъёме по лестнице",
+        history="Иногда пропускает вечерний приём препарата",
+        objective="Пастозность голеней",
+        plan="Повторная консультация после обследования",
+    )
+    newer = Encounter(
+        id="visit-newer",
+        source=SOURCE,
+        occurred_at=date(2026, 1, 15),
+        complaints="Одышка стала реже",
+        history="Препарат принимает регулярно",
+        objective="Отёков нет",
+        plan="Контрольный осмотр",
+        follow_up_at=date(2026, 2, 1),
+    )
+    record = _record(encounters=[older, newer])
+    dashboard = DashboardService().build(record)
+
+    context = build_summary_context(record, dashboard)
+    reordered = build_summary_context(
+        _record(encounters=[newer, older]),
+        dashboard,
+    )
+
+    assert context == reordered
+    assert [fact.source_id for fact in context.facts] == [
+        "encounter:visit-newer",
+        "encounter:visit-older",
+    ]
+    latest = context.facts[0]
+    assert latest.occurred_at == "2026-01-15"
+    assert latest.text == (
+        "жалобы: Одышка стала реже; "
+        "анамнез: Препарат принимает регулярно; "
+        "объективный статус: Отёков нет; "
+        "план: Контрольный осмотр; "
+        "повторный приём: 2026-02-01"
+    )
+
+
+def test_context_projects_dated_instrumental_report_text() -> None:
+    record = _record(
+        reports=[
+            DiagnosticReport(
+                id="echo",
+                source=SOURCE,
+                category="instrumental",
+                coding=Coding(display="ЭхоКГ"),
+                effective_at=date(2025, 12, 1),
+                conclusion="Клапанных нарушений не выявлено",
+            ),
+            DiagnosticReport(
+                id="ecg",
+                source=SOURCE,
+                category="instrumental",
+                coding=Coding(display="ЭКГ"),
+                issued_at=date(2026, 1, 10),
+                conclusion="Синусовый ритм",
+            ),
+            DiagnosticReport(
+                id="laboratory",
+                source=SOURCE,
+                category="laboratory",
+                coding=Coding(display="Биохимия"),
+                effective_at=date(2026, 1, 20),
+                conclusion="Показатели без особенностей",
+            ),
+            DiagnosticReport(
+                id="empty",
+                source=SOURCE,
+                category="instrumental",
+                coding=Coding(display="УЗИ"),
+                effective_at=date(2026, 1, 25),
+            ),
+            DiagnosticReport(
+                id="raw-date",
+                source=SOURCE,
+                category="instrumental",
+                coding=Coding(display="Холтер"),
+                effective_at_text="весна 2025",
+                conclusion="Редкие наджелудочковые экстрасистолы",
+            ),
+        ]
+    )
+
+    context = build_summary_context(record, DashboardService().build(record))
+
+    assert [fact.source_id for fact in context.facts] == [
+        "report:ecg",
+        "report:echo",
+        "report:raw-date",
+    ]
+    assert context.facts[0].occurred_at == "2026-01-10"
+    assert context.facts[0].text == (
+        "исследование: ЭКГ; заключение: Синусовый ритм"
+    )
+    assert context.facts[-1].occurred_at == "весна 2025"
+
+
+def test_empty_encounters_do_not_displace_encounters_with_text() -> None:
+    empty_encounters = [
+        Encounter(
+            id=f"empty-{index}",
+            source=SOURCE,
+            occurred_at=date(2026, 1, index + 1),
+        )
+        for index in range(12)
+    ]
+    narrative = Encounter(
+        id="narrative",
+        source=SOURCE,
+        occurred_at=date(2025, 12, 1),
+        complaints="Сохраняется кашель",
+    )
+    record = _record(encounters=[narrative, *empty_encounters])
+
+    context = build_summary_context(record, DashboardService().build(record))
+
+    assert [fact.source_id for fact in context.facts] == ["encounter:narrative"]
+    assert context.omitted_records == 0
+
+
 def test_context_limits_records_and_truncates_free_text() -> None:
     encounters = [
         Encounter(
@@ -119,7 +246,35 @@ def test_context_limits_records_and_truncates_free_text() -> None:
     assert context.facts[0].source_id == "encounter:visit-14"
 
 
-def test_context_sends_metric_summary_instead_of_raw_observations() -> None:
+def test_context_keeps_the_total_character_limit() -> None:
+    record = _record(
+        encounters=[
+            Encounter(
+                id="large",
+                source=SOURCE,
+                occurred_at=date(2026, 1, 2),
+                complaints="x" * 60,
+            ),
+            Encounter(
+                id="s",
+                source=SOURCE,
+                occurred_at=date(2026, 1, 1),
+                complaints="ok",
+            ),
+        ]
+    )
+
+    context = build_summary_context(
+        record,
+        DashboardService().build(record),
+        limits=ContextLimits(total_characters=40),
+    )
+
+    assert [fact.source_id for fact in context.facts] == ["encounter:s"]
+    assert context.omitted_records == 1
+
+
+def test_context_does_not_send_chart_metrics_or_raw_observations() -> None:
     observations = [
         Observation(
             id=f"glucose-{index}",
@@ -134,21 +289,16 @@ def test_context_sends_metric_summary_instead_of_raw_observations() -> None:
         )
     ]
     record = _record(observations=observations)
+    dashboard = DashboardService().build(record)
 
-    context = build_summary_context(record, DashboardService().build(record))
+    context = build_summary_context(record, dashboard)
 
-    assert len(context.facts) == 1
-    metric = context.facts[0]
-    assert metric.source_id == "metric:glucose"
-    assert metric.visible_on_dashboard is False
-    assert "последнее значение: 6.5 mmol/L от 2025-01-01" in metric.text
-    assert "среднее за последние 12 месяцев: 6.50 mmol/L" in metric.text
-    assert "среднее за предыдущие 12 месяцев: 5.00 mmol/L" in metric.text
-    assert "изменение средних: +1.50 mmol/L" in metric.text
-    assert "glucose-0" not in metric.text
+    assert dashboard.metrics
+    assert context.facts == []
+    assert context.source_ids == set()
 
 
-def test_context_marks_calculated_metric_and_method() -> None:
+def test_context_does_not_send_calculated_metrics() -> None:
     record = _record()
     dashboard = DashboardResponse(
         generated_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
@@ -181,7 +331,4 @@ def test_context_marks_calculated_metric_and_method() -> None:
 
     context = build_summary_context(record, dashboard)
 
-    assert len(context.facts) == 1
-    assert "тип значения: рассчитано детерминированным кодом" in context.facts[0].text
-    assert "метод расчёта: 2021 CKD-EPI creatinine equation" in context.facts[0].text
-    assert "категория показателя: G3a" in context.facts[0].text
+    assert context.facts == []

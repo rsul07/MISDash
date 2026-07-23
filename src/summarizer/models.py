@@ -15,7 +15,6 @@ FactKind = Literal[
     "medication",
     "encounter",
     "diagnostic_report",
-    "metric",
 ]
 
 
