@@ -22,11 +22,6 @@ class ClinicalSummary(ContractModel):
         max_length=3,
         description="Dated evolution of symptoms documented in clinical text.",
     )
-    compliance_and_behavior: list[SummaryItem] = Field(
-        default_factory=list,
-        max_length=3,
-        description="Explicit evidence about adherence and health-related behavior.",
-    )
     textual_findings: list[SummaryItem] = Field(
         default_factory=list,
         max_length=3,

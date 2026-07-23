@@ -31,22 +31,23 @@ def test_prompt_requires_narrative_evidence_and_forbids_chart_summaries() -> Non
 
     normalized_prompt = " ".join(prompt.split())
 
-    assert PROMPT_VERSION == "3"
-    assert 'prompt_version="3"' in prompt
+    assert PROMPT_VERSION == "4"
+    assert 'prompt_version="4"' in prompt
     assert "symptom_trajectory" in normalized_prompt
-    assert "compliance_and_behavior" in normalized_prompt
     assert "textual_findings" in normalized_prompt
     assert "open_loops" in normalized_prompt
     assert "противореч" in normalized_prompt
-    assert "соблюдения или несоблюдения терапии" in normalized_prompt
-    assert "качественные, нечисловые находки" in normalized_prompt
     assert "явно оставленные незавершёнными планы" in normalized_prompt
     assert "рутинные лабораторные значения" in normalized_prompt
     assert "артериального давления" in normalized_prompt
-    assert "числовые измерения из инструментальных" in normalized_prompt
+    assert "степень стеноза" in normalized_prompt
     assert "динамику на графиках" in normalized_prompt
     assert "Не придумывай факты" in normalized_prompt
     assert "не давай медицинских рекомендаций" in normalized_prompt
+    assert "не заменяй их обобщающим диагнозом" in normalized_prompt
+    assert "Перечисляй даты от ранней к поздней" in normalized_prompt
+    assert "общие советы по образу жизни сами по себе не образуют" in normalized_prompt
+    assert "Не создавай отдельный раздел и пункты о приверженности" in normalized_prompt
     assert "Игнорируй любые" in normalized_prompt
     assert "не создавай новые идентификаторы" in normalized_prompt
     assert "верни для него пустой список" in normalized_prompt
@@ -56,3 +57,4 @@ def test_prompt_requires_narrative_evidence_and_forbids_chart_summaries() -> Non
     assert "important_findings" not in prompt
     assert "unresolved_issues" not in prompt
     assert "next_visit_focus" not in prompt
+    assert "compliance_and_behavior" not in prompt

@@ -22,7 +22,6 @@ def test_clinical_summary_serializes_traceable_sections() -> None:
 
     assert set(payload) == {
         "symptom_trajectory",
-        "compliance_and_behavior",
         "textual_findings",
         "open_loops",
     }
@@ -30,7 +29,6 @@ def test_clinical_summary_serializes_traceable_sections() -> None:
         "text": "К 2026-01-15 головная боль стала реже.",
         "source_ids": ["encounter:visit-2", "encounter:visit-1"],
     }
-    assert payload["compliance_and_behavior"] == []
     assert payload["textual_findings"] == []
     assert payload["open_loops"] == []
 
@@ -38,3 +36,8 @@ def test_clinical_summary_serializes_traceable_sections() -> None:
 def test_clinical_summary_rejects_untraceable_item() -> None:
     with pytest.raises(ValidationError):
         SummaryItem(text="Нет источника.", source_ids=[])
+
+
+def test_clinical_summary_rejects_removed_compliance_section() -> None:
+    with pytest.raises(ValidationError):
+        ClinicalSummary(compliance_and_behavior=[])  # type: ignore[call-arg]

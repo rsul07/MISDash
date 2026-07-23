@@ -7,8 +7,7 @@ from src.contracts.summarizer.v1 import ClinicalSummary, SummaryItem
 
 _SECTIONS = (
     ("Динамика симптомов", "symptom_trajectory"),
-    ("Приверженность и поведение", "compliance_and_behavior"),
-    ("Текстовые находки", "textual_findings"),
+    ("Важные результаты осмотров и исследований", "textual_findings"),
     ("Незавершённые планы и вопросы", "open_loops"),
 )
 
