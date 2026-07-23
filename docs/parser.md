@@ -28,29 +28,18 @@ print(paths["patient_record"])
 2. переменная окружения `OUTPUT_DIR`;
 3. `data/processed/`.
 
+Локальный `.env` загружается при импорте пакета через `python-dotenv`.
+`OUTPUT_DIR` применяется только к `parse()`/`run()`: `parse_record()` ничего
+не записывает и не создаёт выходную директорию.
+
 ## Архитектура
 
-```mermaid
-flowchart LR
-    JSON[Грязный JSON МИС] --> Engine[engine.py<br/>MISParser]
-    Engine --> Builder[canonical/builder.py]
-    Builder --> Patient[patient.py]
-    Builder --> Social[social.py]
-    Builder --> Encounters[encounters.py]
-    Builder --> Observations[observations/]
-    Builder --> History[history.py]
-    Patient --> Record[PatientRecord v1]
-    Social --> Record
-    Encounters --> Record
-    Observations --> Record
-    History --> Record
-    Record --> Backend[DashboardService]
-    Record -. parse() .-> Storage[src/storage]
-    Storage --> JSONOut[patient_record.json]
-```
+![Компоненты parser](diagrams/rendered/parser-components.svg)
 
 `engine.py` — тонкий фасад. Вся mapping-логика разделена по клиническим
-доменам и композируется только в `canonical/builder.py`.
+доменам и композируется только в `canonical/builder.py`. Схема показывает
+поток данных, а не порядок Python-вызовов: builder вызывает адаптеры и собирает
+их результаты в корневую модель.
 
 ### Ответственность модулей
 
@@ -61,10 +50,12 @@ flowchart LR
 | `normalizers.py` | Даты, числа, текст и физиологическая валидация. |
 | `records.py` | Безопасный доступ, альтернативные имена, keyed-коллекции, дубли приёмов. |
 | `extractors.py` | Детерминированное извлечение АД и ЧСС из текста. |
+| `canonical/common.py` | `SourceReference`, внутренние ID и сохранение исходного текста неточной даты. |
+| `canonical/dates.py` | Клинические `date`/`datetime`, Unix timestamp и контроль точности даты. |
 | `canonical/patient.py` | Пациент, аллергии и хронические состояния. |
 | `canonical/social.py` | Образ жизни и семейный анамнез. |
 | `canonical/encounters.py` | Полные приёмы, диагнозы и назначения. |
-| `canonical/observations/` | Дневник, лаборатория, измерения приёмов и structured vitals. |
+| `canonical/observations/` | Отдельные адаптеры дневника, лаборатории, прямых и извлечённых измерений приёмов. |
 | `canonical/history.py` | Операции, госпитализации, прививки и инструментальные отчёты. |
 | `canonical/builder.py` | Сборка корневого `PatientRecord`. |
 | `src/storage/patient_records.py` | Валидация и атомарная запись канонического JSON для `parse()`. |
@@ -118,7 +109,7 @@ sequenceDiagram
 `NaN` и бесконечности также считаются пропусками при выборе fallback alias.
 
 ```python
-from src.parser.engine import normalize_date, parse_number
+from src.parser.normalizers import normalize_date, parse_number
 
 normalize_date("14.03.1967")  # "1967-03-14"
 parse_number("46,5")          # 46.5
@@ -142,6 +133,10 @@ Regex для свободного текста используется как f
 полей. Систолическое и диастолическое давление никогда не смешиваются из
 разных фрагментов.
 
+Лабораторная панель представлена `DiagnosticReport`, а отдельные результаты —
+связанными с ним `Observation` через `report_id`/`observation_ids`. Значения не
+копируются в `components` отчёта и не схлопываются по дню.
+
 ## Выходной контракт
 
 Корень `PatientRecord` содержит `schema_version: "1.0"`, пациента и коллекции
@@ -157,7 +152,8 @@ Regex для свободного текста используется как f
 2. создать отдельный адаптер в `src/parser/canonical/`;
 3. подключить его только в `canonical/builder.py`;
 4. добавить contract-тесты и тесты грязных форм входа;
-5. обновить этот документ и `docs/data_contract.md`.
+5. обновить этот документ, [контракт данных](data_contract.md) и при
+   необходимости общую [диаграмму parser](diagrams/README.md).
 
 Новое альтернативное имя поля добавляется рядом с текущими aliases в
 соответствующем adapter. Новый формат даты добавляется в normalizer с

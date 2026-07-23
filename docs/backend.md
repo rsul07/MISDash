@@ -1,9 +1,10 @@
-# Backend service и `DashboardResponse v1`
+# Backend service и `DashboardResponse 1.1`
 
 ## Назначение
 
 Backend service строит готовое представление дашборда из канонического
-`PatientRecord`. Frontend зависит только от `DashboardResponse v1` и не знает:
+`PatientRecord`. Детерминированные компоненты frontend зависят только от
+`DashboardResponse` и не знают:
 
 - исходные имена и вложенность полей МИС;
 - правила выбора актуального веса и терапии;
@@ -69,7 +70,10 @@ KDIGO (`G*` или `A*`), вычисленную по неокруглённом
 его из актуальных роста и веса.
 
 Текущей терапией считается список назначений из последнего по дате приёма,
-где присутствуют связанные `medication_ids`.
+где присутствуют связанные `medication_ids`. Если таких приёмов нет,
+используются назначения без `encounter_id`. Это техническое правило проекции,
+а не полноценная сверка лекарств: backend пока не выводит отмену, фактический
+приём или приверженность из свободного текста.
 
 ## Лента приёмов
 
@@ -86,6 +90,7 @@ KDIGO (`G*` или `A*`), вычисленную по неокруглённом
 - `systolic`, `diastolic`, `heart-rate`, `body-weight`, `bmi`;
 - `glucose`, `hba1c`, `creatinine`, `potassium`;
 - `total-cholesterol`, `ldl-cholesterol`, `hdl-cholesterol`, `triglycerides`;
+- `oxygen-saturation`, `body-temperature`;
 - `urine-albumin-creatinine-ratio`.
 
 `src/backend/calculations/` связывает канонические записи с чистыми формулами
@@ -96,8 +101,12 @@ KDIGO (`G*` или `A*`), вычисленную по неокруглённом
 - `calculated-ldl-cholesterol`, только если в панели нет пригодного прямого ЛПНП;
 - `pulse-pressure`.
 
-Липиды соединяются только внутри одного `report_id`, САД и ДАД — только внутри
-одного `Observation`, а возраст для eGFR определяется на дату креатинина.
+Липиды соединяются только внутри одного `report_id`, с одинаковым
+`observed_at` и единственным пригодным значением каждого требуемого компонента.
+Наличие любого пригодного прямого ЛПНП в той же панели отменяет восстановление
+ЛПНП. САД и ДАД берутся только из одного `Observation`, причём каждого
+компонента должно быть ровно по одному. Возраст для eGFR определяется на дату
+сывороточного креатинина; результаты мочи исключаются.
 Производные значения не записываются обратно в `PatientRecord` и могут быть
 полностью перестроены.
 
@@ -115,29 +124,23 @@ KDIGO (`G*` или `A*`), вычисленную по неокруглённом
 from src.backend import DashboardService
 
 response = DashboardService().build_from_path(
-    "data/output_test/patient_record.json"
+    "data/processed/patient_record.json"
 )
 payload = response.model_dump(mode="json")
 ```
 
-```mermaid
-flowchart LR
-    JSON[patient_record.json] --> Repository[src/storage]
-    Repository --> Record[PatientRecord v1]
-    Record --> Service[DashboardService]
-    Record --> Calculators[calculations + calculators]
-    Service --> Profile[profile.py]
-    Service --> Metrics[metrics.py]
-    Service --> Visits[visits.py]
-    Calculators --> Metrics
-    Profile --> Response[DashboardResponse v1]
-    Metrics --> Response
-    Visits --> Response
-    Response --> Frontend
-```
+Для in-memory сценария используется `DashboardService().build(record)`.
+Полная связь backend с parser, контрактами, калькуляторами и интерфейсом
+показана на общей
+[архитектурной диаграмме](diagrams/rendered/system-architecture.svg).
 
 `src/storage/patient_records.py` отвечает только за чтение, строгую валидацию
 и атомарную запись канонического JSON. Проекции получают Pydantic-модель и не
 зависят от файловой системы.
 `generated_at` и дата расчёта возраста могут передаваться явно, что делает
 сервис детерминированным в тестах.
+
+Текущий Streamlit-слой дополнительно хранит `PatientRecord` только для
+явного вызова `SummaryService`: LLM получает ограниченные тексты приёмов и
+исследований, а не исходные поля МИС. Эта orchestration-граница описана в
+[документации summarizer](summarizer.md).
