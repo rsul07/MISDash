@@ -23,7 +23,9 @@ def test_metrics_render_only_active_available_group(
 ) -> None:
     streamlit = MagicMock()
     streamlit.tabs.return_value = [_Tab(open=True), _Tab(open=False)]
+    streamlit.columns.return_value = [MagicMock(), MagicMock()]
     monkeypatch.setattr(component, "st", streamlit)
+    monkeypatch.setattr(component, "render_section_header", MagicMock())
     dashboard = _dashboard(
         _series("diastolic", "Диастолическое АД", "mmHg", 80),
         _series("systolic", "Систолическое АД", "mmHg", 120),
@@ -57,10 +59,16 @@ def test_metrics_render_only_active_available_group(
         call.kwargs["use_container_width"] is True
         for call in streamlit.plotly_chart.call_args_list
     )
+    assert all(
+        call.kwargs["theme"] is None
+        for call in streamlit.plotly_chart.call_args_list
+    )
+    assert figures[0].data[0].line.color == component.METRIC_COLORS["systolic"]
+    assert figures[0].layout.paper_bgcolor == "rgba(0,0,0,0)"
     streamlit.info.assert_not_called()
 
 
-def test_dense_series_use_lines_and_default_to_latest_year() -> None:
+def test_dense_series_use_lines_and_default_to_latest_quarter() -> None:
     dense = _series(
         "systolic",
         "Систолическое АД",
@@ -82,10 +90,12 @@ def test_dense_series_use_lines_and_default_to_latest_year() -> None:
     assert figure.data[1].mode == "lines+markers"
     assert [
         button.label for button in figure.layout.xaxis.rangeselector.buttons
-    ] == ["1 год", "3 года", "Всё"]
+    ] == ["3 мес", "1 год", "3 года", "Всё"]
     visible_range = figure.layout.xaxis.range
     assert visible_range is not None
-    assert visible_range[1] - visible_range[0] == timedelta(days=365)
+    assert visible_range[1] - visible_range[0] == timedelta(days=90)
+    assert figure.layout.transition.duration == 250
+    assert figure.layout.yaxis.gridcolor == "#E4EDF2"
 
 
 def test_metrics_handle_missing_series_and_empty_points(
@@ -93,6 +103,7 @@ def test_metrics_handle_missing_series_and_empty_points(
 ) -> None:
     streamlit = MagicMock()
     monkeypatch.setattr(component, "st", streamlit)
+    monkeypatch.setattr(component, "render_section_header", MagicMock())
     dashboard = _dashboard(
         MetricSeries(
             code="glucose",
@@ -115,7 +126,9 @@ def test_metrics_render_backend_calculation_explanation(
 ) -> None:
     streamlit = MagicMock()
     streamlit.tabs.return_value = [_Tab(open=True)]
+    streamlit.columns.return_value = [MagicMock()]
     monkeypatch.setattr(component, "st", streamlit)
+    monkeypatch.setattr(component, "render_section_header", MagicMock())
     calculated = _series("pulse-pressure", "Пульсовое давление", "mmHg", 60)
     calculated.calculation = CalculationInfo(
         code="pulse-pressure",
@@ -178,6 +191,37 @@ def test_metric_hover_shows_backend_interpretation() -> None:
 
     assert "Категория: %{customdata[1]}" in figure.data[0].hovertemplate
     assert list(figure.data[0].customdata[0]) == ["laboratory", "G3b"]
+
+
+def test_latest_value_tiles_use_last_point_and_calculation_badge(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    streamlit = MagicMock()
+    column = MagicMock()
+    streamlit.columns.return_value = [column]
+    monkeypatch.setattr(component, "st", streamlit)
+    series = _series("pulse-pressure", "Пульсовое давление", "mmHg", 60)
+    series.points.append(
+        MetricPoint(
+            observed_at=date(2025, 1, 2),
+            value=72,
+            source_category="calculated",
+        )
+    )
+    series.calculation = CalculationInfo(
+        code="pulse-pressure",
+        description="Разница.",
+        purpose="Контекст.",
+        method="SBP - DBP",
+        standard="ESC",
+    )
+
+    component._render_latest_values([series])
+
+    html = column.markdown.call_args.args[0]
+    assert "72 mmHg" in html
+    assert "02.01.2025" in html
+    assert "расчётный" in html
 
 
 def _dashboard(*metrics: MetricSeries) -> DashboardResponse:

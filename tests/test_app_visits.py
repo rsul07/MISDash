@@ -20,7 +20,9 @@ def test_visits_preserve_backend_order_and_show_required_columns(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     streamlit = MagicMock()
+    streamlit.text_input.return_value = ""
     monkeypatch.setattr(component, "st", streamlit)
+    monkeypatch.setattr(component, "render_section_header", MagicMock())
     dashboard = _dashboard(
         VisitSummary(
             id="new",
@@ -56,20 +58,38 @@ def test_visits_preserve_backend_order_and_show_required_columns(
             "Жалобы": "Нет данных",
         },
     ]
-    assert streamlit.dataframe.call_args.kwargs == {
-        "hide_index": True,
-        "use_container_width": True,
+    assert streamlit.dataframe.call_args.kwargs["hide_index"] is True
+    assert streamlit.dataframe.call_args.kwargs["width"] == "stretch"
+    assert streamlit.dataframe.call_args.kwargs["height"] == 480
+    assert set(streamlit.dataframe.call_args.kwargs["column_config"]) == {
+        "Дата",
+        "Врач",
+        "Специальность",
+        "Основной диагноз",
+        "Жалобы",
     }
 
 
 def test_visits_show_empty_state(monkeypatch: pytest.MonkeyPatch) -> None:
     streamlit = MagicMock()
     monkeypatch.setattr(component, "st", streamlit)
+    monkeypatch.setattr(component, "render_section_header", MagicMock())
 
     component.render_visits(_dashboard())
 
     streamlit.info.assert_called_once_with("Пока нет данных")
     streamlit.dataframe.assert_not_called()
+
+
+def test_filter_rows_searches_all_visible_fields() -> None:
+    rows = [
+        {"Дата": "01.01.2026", "Врач": "Иванов", "Жалобы": "Головная боль"},
+        {"Дата": "02.01.2026", "Врач": "Петров", "Жалобы": "Нет жалоб"},
+    ]
+
+    assert component._filter_rows(rows, "головная") == [rows[0]]
+    assert component._filter_rows(rows, " ПЕТРОВ ") == [rows[1]]
+    assert component._filter_rows(rows, "") == rows
 
 
 def _dashboard(*visits: VisitSummary) -> DashboardResponse:

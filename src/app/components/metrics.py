@@ -4,10 +4,21 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta, timezone
+from html import escape
 
 import plotly.graph_objects as go
 import streamlit as st
 
+from src.app.theme import (
+    AMBER,
+    BLUE,
+    BORDER,
+    CRITICAL,
+    INK,
+    MUTED,
+    TEAL,
+    render_section_header,
+)
 from src.contracts.dashboard.v1 import CalculationInfo, DashboardResponse, MetricSeries
 
 
@@ -56,11 +67,32 @@ METRIC_GROUPS = (
 
 DENSE_SERIES_POINT_THRESHOLD = 500
 DEFAULT_VISIBLE_DAYS = 365
+DENSE_VISIBLE_DAYS = 90
 RANGE_SELECTOR_BUTTONS = (
+    {"count": 3, "label": "3 мес", "step": "month", "stepmode": "backward"},
     {"count": 1, "label": "1 год", "step": "year", "stepmode": "backward"},
     {"count": 3, "label": "3 года", "step": "year", "stepmode": "backward"},
     {"label": "Всё", "step": "all"},
 )
+METRIC_COLORS = {
+    "systolic": BLUE,
+    "diastolic": TEAL,
+    "pulse-pressure": AMBER,
+    "glucose": BLUE,
+    "hba1c": TEAL,
+    "creatinine": BLUE,
+    "egfr-ckd-epi-2021": TEAL,
+    "urine-albumin-creatinine-ratio": AMBER,
+    "potassium": CRITICAL,
+    "total-cholesterol": BLUE,
+    "non-hdl-cholesterol": TEAL,
+    "ldl-cholesterol": AMBER,
+    "calculated-ldl-cholesterol": "#B26D18",
+    "hdl-cholesterol": "#6677C8",
+    "triglycerides": "#3A9CB8",
+    "body-weight": BLUE,
+    "bmi": TEAL,
+}
 
 
 def render_metrics(dashboard: DashboardResponse) -> None:
@@ -69,7 +101,14 @@ def render_metrics(dashboard: DashboardResponse) -> None:
     metrics_by_code = {
         series.code: series for series in dashboard.metrics if series.points
     }
-    st.header("Динамика показателей")
+    render_section_header(
+        "Динамика показателей",
+        eyebrow="ВРЕМЕННЫЕ РЯДЫ",
+        description=(
+            "Выберите клиническую область. Для плотных дневников "
+            "по умолчанию показаны последние 90 дней."
+        ),
+    )
 
     available_groups = [
         (group, group_series)
@@ -90,12 +129,14 @@ def render_metrics(dashboard: DashboardResponse) -> None:
             continue
 
         with tab:
+            _render_latest_values(series)
             for figure_index, figure in enumerate(_build_figures(series)):
                 st.plotly_chart(
                     figure,
                     key=f"metric-chart-{group.key}-{figure_index}",
                     use_container_width=True,
                     config={"displayModeBar": False},
+                    theme=None,
                 )
             _render_calculation_explanations(series)
 
@@ -129,6 +170,7 @@ def _build_figure(unit: str | None, series: list[MetricSeries]) -> go.Figure:
     unit_label = unit or ""
 
     for item in series:
+        color = METRIC_COLORS.get(item.code, BLUE)
         has_interpretation = any(point.interpretation for point in item.points)
         interpretation_line = (
             "Категория: %{customdata[1]}<br>" if has_interpretation else ""
@@ -152,7 +194,13 @@ def _build_figure(unit: str | None, series: list[MetricSeries]) -> go.Figure:
                     else "lines+markers"
                 ),
                 name=item.display,
-                marker={"size": 5},
+                line={"color": color, "width": 2.35},
+                marker={
+                    "size": 5.5,
+                    "color": color,
+                    "line": {"color": "#FFFFFF", "width": 0.8},
+                },
+                connectgaps=False,
                 hovertemplate=(
                     "Дата: %{x|%d.%m.%Y %H:%M}<br>"
                     f"Значение: %{{y:.2f}} {unit_label}<br>"
@@ -171,14 +219,87 @@ def _build_figure(unit: str | None, series: list[MetricSeries]) -> go.Figure:
         xaxis["range"] = default_range
 
     figure.update_layout(
-        height=360,
+        height=390,
         hovermode="closest",
-        legend_title_text="Показатель",
-        margin={"l": 20, "r": 20, "t": 20, "b": 20},
+        title={
+            "text": f"Динамика · {unit_label or 'без единицы'}",
+            "x": 0.025,
+            "xanchor": "left",
+            "font": {"size": 16, "color": INK},
+        },
+        legend={
+            "title": {"text": ""},
+            "orientation": "h",
+            "yanchor": "bottom",
+            "y": 1.02,
+            "xanchor": "right",
+            "x": 1,
+            "font": {"color": MUTED, "size": 11},
+        },
+        margin={"l": 54, "r": 24, "t": 78, "b": 48},
         xaxis=xaxis,
-        yaxis_title=unit or "Значение",
+        yaxis={
+            "title": {"text": unit or "Значение", "font": {"color": MUTED}},
+            "gridcolor": "#E4EDF2",
+            "zeroline": False,
+            "tickfont": {"color": MUTED},
+            "fixedrange": False,
+        },
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="#FFFFFF",
+        font={"family": "Inter, Segoe UI, sans-serif", "color": INK},
+        hoverlabel={
+            "bgcolor": INK,
+            "bordercolor": INK,
+            "font": {"color": "#FFFFFF", "size": 12},
+        },
+        transition={"duration": 250, "easing": "cubic-in-out"},
+    )
+    figure.update_xaxes(
+        gridcolor="#EEF3F6",
+        zeroline=False,
+        tickfont={"color": MUTED},
+        title_font={"color": MUTED},
+        rangeselector={
+            "buttons": RANGE_SELECTOR_BUTTONS,
+            "bgcolor": "#F0F6F8",
+            "activecolor": "#DDECF0",
+            "bordercolor": BORDER,
+            "borderwidth": 1,
+            "font": {"color": INK, "size": 10},
+        },
     )
     return figure
+
+
+def _render_latest_values(series: list[MetricSeries]) -> None:
+    for start in range(0, len(series), 4):
+        batch = series[start : start + 4]
+        columns = st.columns(len(batch), gap="small")
+        for column, item in zip(columns, batch, strict=True):
+            point = max(
+                item.points,
+                key=lambda candidate: _as_utc_naive(candidate.observed_at),
+            )
+            unit = f" {escape(item.unit)}" if item.unit else ""
+            calculated = (
+                '<span class="mis-latest-badge">расчётный</span>'
+                if item.calculation is not None
+                else ""
+            )
+            column.markdown(
+                (
+                    '<div class="mis-latest-value mis-enter">'
+                    f"<span>{escape(item.display)}</span>"
+                    f"<strong>{point.value:g}{unit}</strong>"
+                    '<div class="mis-latest-meta">'
+                    f"<small>{point.observed_at.strftime('%d.%m.%Y')}</small>"
+                    f"{calculated}"
+                    "</div>"
+                    "</div>"
+                ),
+                unsafe_allow_html=True,
+            )
 
 
 def _render_calculation_explanations(series: list[MetricSeries]) -> None:
@@ -249,9 +370,17 @@ def _default_date_range(
 
     latest = max(observed_at)
     earliest = min(observed_at)
-    if latest - earliest <= timedelta(days=DEFAULT_VISIBLE_DAYS):
+    visible_days = (
+        DENSE_VISIBLE_DAYS
+        if any(
+            len(item.points) > DENSE_SERIES_POINT_THRESHOLD
+            for item in series
+        )
+        else DEFAULT_VISIBLE_DAYS
+    )
+    if latest - earliest <= timedelta(days=visible_days):
         return None
-    return latest - timedelta(days=DEFAULT_VISIBLE_DAYS), latest
+    return latest - timedelta(days=visible_days), latest
 
 
 def _as_utc_naive(value: date | datetime) -> datetime:
