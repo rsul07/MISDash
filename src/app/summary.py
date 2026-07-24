@@ -43,13 +43,7 @@ def render_summary_controls(
         st.session_state[_STATE_KEY] = cache_key
         st.session_state.pop(_STATE_MARKDOWN, None)
 
-    render_section_header(
-        "ИИ-сводка",
-        description=(
-            "Gemini анализирует жалобы, анамнез и заключения исследований; "
-            "числовые тренды остаются на графиках."
-        ),
-    )
+    render_section_header("ИИ-сводка")
     st.caption(_PRIVACY_NOTE)
     if settings.api_key is None and service is None:
         st.warning(

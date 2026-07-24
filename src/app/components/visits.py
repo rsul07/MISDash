@@ -16,10 +16,7 @@ _MISSING = "Нет данных"
 def render_visits(dashboard: DashboardResponse) -> None:
     """Render a compact searchable view of the recent-first visit timeline."""
 
-    render_section_header(
-        "Врачебные приёмы",
-        description=f"В доступной истории: {len(dashboard.visits)} приёмов.",
-    )
+    render_section_header("Врачебные приёмы")
     if not dashboard.visits:
         st.info("Пока нет данных")
         return

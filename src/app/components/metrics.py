@@ -101,13 +101,7 @@ def render_metrics(dashboard: DashboardResponse) -> None:
     metrics_by_code = {
         series.code: series for series in dashboard.metrics if series.points
     }
-    render_section_header(
-        "Динамика показателей",
-        description=(
-            "Выберите клиническую область. Для плотных дневников "
-            "по умолчанию показаны последние 90 дней."
-        ),
-    )
+    render_section_header("Динамика показателей")
 
     available_groups = [
         (group, group_series)

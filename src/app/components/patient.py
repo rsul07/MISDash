@@ -26,10 +26,7 @@ def render_patient_card(dashboard: DashboardResponse) -> None:
     """Render the patient hero without pushing clinical signals below the fold."""
 
     patient = dashboard.patient
-    render_section_header(
-        "Пациент",
-        description="Ключевые сведения из нормализованной медицинской истории.",
-    )
+    render_section_header("Пациент")
 
     card = st.container(border=True)
     columns = card.columns((2.35, 1, 1, 1, 1, 1), gap="small")
@@ -61,10 +58,7 @@ def render_patient_card(dashboard: DashboardResponse) -> None:
 def render_patient_context(dashboard: DashboardResponse) -> None:
     """Render allergies, diagnoses and current therapy below active signals."""
 
-    render_section_header(
-        "Клинический контекст",
-        description="Аллергии, хронические состояния и актуальные назначения.",
-    )
+    render_section_header("Клинический контекст")
     clinical = st.columns((1, 1.35, 1.65), gap="medium")
     clinical[0].markdown(
         _allergies_html(dashboard.allergies),

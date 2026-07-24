@@ -76,19 +76,13 @@ def render_empty_state() -> None:
     )
 
 
-def render_section_header(
-    title: str,
-    *,
-    description: str | None = None,
-) -> None:
+def render_section_header(title: str) -> None:
     """Render consistent hierarchy for dashboard sections."""
 
-    paragraph = f"<p>{escape(description)}</p>" if description else ""
     st.markdown(
         (
             '<div class="mis-section-heading mis-enter">'
             f"<h2>{escape(title)}</h2>"
-            f"{paragraph}"
             "</div>"
         ),
         unsafe_allow_html=True,
@@ -325,11 +319,6 @@ html, body, [class*="css"] {{
   font-size: clamp(1.55rem, 2.3vw, 2rem);
   letter-spacing: -0.025em;
   margin: 0.2rem 0 0.2rem;
-}}
-
-.mis-section-heading p {{
-  color: var(--mis-muted);
-  margin: 0;
 }}
 
 .mis-patient-heading {{

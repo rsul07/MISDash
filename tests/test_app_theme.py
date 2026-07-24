@@ -54,7 +54,7 @@ def test_headers_do_not_render_decorative_eyebrows(monkeypatch) -> None:
 
     theme.render_sidebar_header()
     theme.render_empty_state()
-    theme.render_section_header("Пациент", description="Основные сведения.")
+    theme.render_section_header("Пациент")
 
     rendered = "\n".join(
         call.args[0] for call in streamlit.markdown.call_args_list
@@ -69,3 +69,6 @@ def test_headers_do_not_render_decorative_eyebrows(monkeypatch) -> None:
     assert "mis-empty-icon" not in rendered
     assert rendered.count("MIS Dash") == 1
     assert "JSON-файл пациента" in rendered
+    section_html = streamlit.markdown.call_args.args[0]
+    assert "<h2>Пациент</h2>" in section_html
+    assert "<p>" not in section_html

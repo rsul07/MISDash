@@ -13,7 +13,7 @@ from src.contracts.dashboard.v1 import DashboardResponse, RedFlag
 
 _SEVERITY_META = {
     "critical": ("Критический сигнал", "critical", "Срочно"),
-    "warning": ("Требует внимания", "warning", "Внимание"),
+    "warning": ("Красный флаг", "warning", "Внимание"),
     "info": ("Информация", "info", "К сведению"),
 }
 _SENTENCE_BOUNDARY = re.compile(r"(?<=[.!?])\s+(?=[А-ЯA-ZЁ])")
@@ -29,13 +29,7 @@ def render_insights(dashboard: DashboardResponse) -> None:
 def render_red_flags(dashboard: DashboardResponse) -> None:
     """Display concise signals with their full rationale on demand."""
 
-    render_section_header(
-        "Требует внимания",
-        description=(
-            "Детерминированные правила выделяют факты для проверки, "
-            "но не заменяют решение врача."
-        ),
-    )
+    render_section_header("Красные флаги")
     if not dashboard.red_flags:
         st.markdown(
             """

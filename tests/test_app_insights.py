@@ -28,7 +28,8 @@ def test_red_flags_render_short_cards_and_expand_rationale(
     columns[1].container.return_value = cards[1]
     streamlit.columns.return_value = columns
     monkeypatch.setattr(component, "st", streamlit)
-    monkeypatch.setattr(component, "render_section_header", MagicMock())
+    section_header = MagicMock()
+    monkeypatch.setattr(component, "render_section_header", section_header)
     dashboard = _dashboard(
         red_flags=[
             RedFlag(
@@ -54,9 +55,12 @@ def test_red_flags_render_short_cards_and_expand_rationale(
 
     component.render_red_flags(dashboard)
 
+    section_header.assert_called_once_with("Красные флаги")
     assert "Высокий риск" in cards[0].markdown.call_args.args[0]
     assert "Срочно" in cards[0].markdown.call_args.args[0]
     assert "Проверить показатель" in cards[1].markdown.call_args.args[0]
+    assert "Красный флаг" in cards[1].markdown.call_args.args[0]
+    assert "Требует внимания" not in cards[1].markdown.call_args.args[0]
     assert "Справка" in cards[2].markdown.call_args.args[0]
     cards[0].expander.assert_called_once_with("Почему сработало правило")
     streamlit.write.assert_called_once_with("Требуется проверка.")
