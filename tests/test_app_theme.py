@@ -78,3 +78,16 @@ def test_headers_do_not_render_decorative_eyebrows(monkeypatch) -> None:
     section_html = streamlit.markdown.call_args.args[0]
     assert "<h2>Пациент</h2>" in section_html
     assert "<p>" not in section_html
+
+
+def test_patient_card_centers_columns_and_stat_values(monkeypatch) -> None:
+    streamlit = MagicMock()
+    monkeypatch.setattr(theme, "st", streamlit)
+
+    theme.apply_app_theme()
+
+    css = streamlit.markdown.call_args.args[0]
+    assert ":has(.mis-patient-marker)" in css
+    assert '[data-testid="stHorizontalBlock"]' in css
+    assert "grid-template-rows: minmax(1.4rem, auto) 1fr;" in css
+    assert "align-items: center;" in css

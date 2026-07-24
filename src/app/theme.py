@@ -367,7 +367,7 @@ html, body, [class*="css"] {{
 }}
 
 .mis-patient-heading {{
-  padding: 0.2rem 0.35rem 0.2rem 0;
+  padding: 0.45rem 0.6rem 0.45rem 0;
 }}
 
 .mis-patient-heading h2 {{
@@ -379,16 +379,25 @@ html, body, [class*="css"] {{
 }}
 
 .mis-patient-id {{
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.55rem;
+  padding: 0.2rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(16, 168, 137, 0.08);
   color: var(--mis-action);
   font-family: ui-monospace, "Cascadia Code", monospace;
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.08em;
 }}
 
 .mis-patient-stat {{
-  min-height: 5.8rem;
-  padding: 0.75rem 0.7rem;
+  display: grid;
+  grid-template-rows: minmax(1.4rem, auto) 1fr;
+  box-sizing: border-box;
+  min-height: 6.35rem;
+  padding: 0.72rem 0.75rem;
   border-radius: 0.8rem;
   background: #f7fafc;
   border: 1px solid #e2edf2;
@@ -400,17 +409,19 @@ html, body, [class*="css"] {{
 }}
 
 .mis-patient-stat span {{
-  min-height: 1.15rem;
   color: var(--mis-muted);
   font-size: 0.7rem;
   line-height: 1.2;
 }}
 
 .mis-patient-stat strong {{
+  display: flex;
+  align-items: center;
+  min-height: 0;
   color: var(--mis-ink);
   font-size: clamp(1.05rem, 1.7vw, 1.45rem);
   line-height: 1.15;
-  margin-top: 0.4rem;
+  padding-top: 0.3rem;
   overflow-wrap: anywhere;
 }}
 
@@ -705,6 +716,11 @@ html, body, [class*="css"] {{
 
 [data-testid="stVerticalBlockBorderWrapper"]:has(.mis-patient-marker) {{
   border-top: 0.22rem solid var(--mis-teal);
+}}
+
+[data-testid="stVerticalBlockBorderWrapper"]:has(.mis-patient-marker)
+  [data-testid="stHorizontalBlock"] {{
+  align-items: center;
 }}
 
 [data-testid="stVerticalBlockBorderWrapper"]:has(.mis-flag-critical) {{
