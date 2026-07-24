@@ -56,6 +56,9 @@ def render_summary_controls(
     should_generate = st.button(
         button_label,
         disabled=settings.api_key is None and service is None,
+        type="primary",
+        icon=":material/auto_awesome:",
+        width="stretch",
     )
     if should_generate:
         try:
