@@ -12,9 +12,9 @@ from src.contracts.dashboard.v1 import DashboardResponse, RedFlag
 
 
 _SEVERITY_META = {
-    "critical": ("Критический сигнал", "critical", "Срочно"),
-    "warning": ("Красный флаг", "warning", "Внимание"),
-    "info": ("Информация", "info", "К сведению"),
+    "critical": ("critical", "Срочно"),
+    "warning": ("warning", "Внимание"),
+    "info": ("info", "К сведению"),
 }
 _SENTENCE_BOUNDARY = re.compile(r"(?<=[.!?])\s+(?=[А-ЯA-ZЁ])")
 
@@ -52,17 +52,16 @@ def render_red_flags(dashboard: DashboardResponse) -> None:
 
 
 def _render_flag_card(card: object, flag: RedFlag) -> None:
-    label, css_class, badge = _SEVERITY_META[flag.severity]
+    css_class, badge = _SEVERITY_META[flag.severity]
     summary, details = _split_explanation(flag.explanation)
     card.markdown(
         (
             f'<span class="mis-flag-marker mis-flag-{css_class}"></span>'
             f'<article class="mis-flag-card mis-flag-{css_class} mis-enter">'
-            '<div class="mis-flag-topline">'
-            f"<span>{escape(label)}</span>"
+            '<div class="mis-flag-heading">'
+            f"<h3>{escape(flag.title)}</h3>"
             f"<b>{escape(badge)}</b>"
             "</div>"
-            f"<h3>{escape(flag.title)}</h3>"
             f"<p>{escape(summary)}</p>"
             "</article>"
         ),

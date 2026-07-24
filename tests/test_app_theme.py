@@ -91,3 +91,15 @@ def test_patient_card_centers_columns_and_stat_values(monkeypatch) -> None:
     assert '[data-testid="stHorizontalBlock"]' in css
     assert "grid-template-rows: minmax(1.4rem, auto) 1fr;" in css
     assert "align-items: center;" in css
+
+
+def test_red_flag_cards_prioritize_title_and_explanation(monkeypatch) -> None:
+    streamlit = MagicMock()
+    monkeypatch.setattr(theme, "st", streamlit)
+
+    theme.apply_app_theme()
+
+    css = streamlit.markdown.call_args.args[0]
+    assert ".mis-flag-heading" in css
+    assert "font-size: 0.9rem;" in css
+    assert "line-height: 1.55;" in css

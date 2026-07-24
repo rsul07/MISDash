@@ -511,57 +511,54 @@ html, body, [class*="css"] {{
 }}
 
 .mis-flag-card {{
-  min-height: 8.3rem;
-  padding: 0.05rem 0 0.15rem 0.35rem;
+  min-height: 6.8rem;
+  padding: 0.2rem 0.1rem 0.25rem 0.35rem;
 }}
 
-.mis-flag-topline {{
+.mis-flag-heading {{
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 0.75rem;
-  margin-bottom: 0.55rem;
+  gap: 1rem;
 }}
 
-.mis-flag-topline span {{
-  color: var(--mis-muted);
-  font-size: 0.68rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}}
-
-.mis-flag-topline b {{
+.mis-flag-heading b {{
+  flex: 0 0 auto;
   padding: 0.2rem 0.5rem;
   border-radius: 999px;
   font-size: 0.65rem;
 }}
 
-.mis-flag-card h3 {{
+.mis-flag-heading h3 {{
+  flex: 1 1 auto;
+  min-width: 0;
   color: var(--mis-ink);
-  font-size: 1.05rem;
-  line-height: 1.25;
-  margin: 0 0 0.42rem;
-}}
-
-.mis-flag-card p {{
-  color: var(--mis-muted);
-  font-size: 0.82rem;
-  line-height: 1.45;
+  font-size: 1.08rem;
+  font-weight: 720;
+  line-height: 1.32;
   margin: 0;
 }}
 
-.mis-flag-critical .mis-flag-topline b {{
+.mis-flag-card p {{
+  max-width: 72ch;
+  color: #36536a;
+  font-size: 0.9rem;
+  font-weight: 450;
+  line-height: 1.55;
+  margin: 0.75rem 0 0;
+}}
+
+.mis-flag-critical .mis-flag-heading b {{
   color: var(--mis-critical);
   background: rgba(180, 35, 60, 0.1);
 }}
 
-.mis-flag-warning .mis-flag-topline b {{
+.mis-flag-warning .mis-flag-heading b {{
   color: #9a5e08;
   background: rgba(212, 136, 23, 0.12);
 }}
 
-.mis-flag-info .mis-flag-topline b {{
+.mis-flag-info .mis-flag-heading b {{
   color: #096d9e;
   background: rgba(22, 140, 202, 0.1);
 }}

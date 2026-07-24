@@ -59,7 +59,8 @@ def test_red_flags_render_short_cards_and_expand_rationale(
     assert "Высокий риск" in cards[0].markdown.call_args.args[0]
     assert "Срочно" in cards[0].markdown.call_args.args[0]
     assert "Проверить показатель" in cards[1].markdown.call_args.args[0]
-    assert "Красный флаг" in cards[1].markdown.call_args.args[0]
+    assert "mis-flag-heading" in cards[1].markdown.call_args.args[0]
+    assert "Красный флаг" not in cards[1].markdown.call_args.args[0]
     assert "Требует внимания" not in cards[1].markdown.call_args.args[0]
     assert "Справка" in cards[2].markdown.call_args.args[0]
     cards[0].expander.assert_called_once_with("Почему сработало правило")
