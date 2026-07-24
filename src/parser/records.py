@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Iterable, Mapping
+from datetime import date, datetime
 from typing import Any
 
 from .constants import RECORD_HINT_KEYS
@@ -67,6 +68,12 @@ def truthy_flag(value: Any) -> bool:
 
 
 def unique_visits(source: Any) -> list[Mapping[str, Any]]:
+    return [visit for _, visit in indexed_unique_visits(source)]
+
+
+def indexed_unique_visits(source: Any) -> list[tuple[int, Mapping[str, Any]]]:
+    """Return deduplicated visits together with their preferred raw index."""
+
     selected: dict[
         tuple[str, ...], tuple[int, tuple[int, bool], Mapping[str, Any]]
     ] = {}
@@ -86,12 +93,16 @@ def unique_visits(source: Any) -> list[Mapping[str, Any]]:
         else:
             merged = _merge_missing(current[2], visit)
             is_original = current[1][1] or quality[1]
+        merged = _preserve_precise_visit_date(merged, current[2], visit)
         selected[identity] = (
-            current[0],
+            index if quality > current[1] else current[0],
             (_completeness_score(merged), is_original),
             merged,
         )
-    return [selected[identity][2] for identity in order]
+    return [
+        (selected[identity][0], selected[identity][2])
+        for identity in order
+    ]
 
 
 def _visit_identity(visit: Mapping[str, Any]) -> tuple[str, ...]:
@@ -150,6 +161,55 @@ def _merge_missing(preferred: Any, fallback: Any) -> Any:
                 result.append(item)
         return result
     return preferred if has_value(preferred) else fallback
+
+
+_VISIT_DATE_KEYS = ("dt_priem", "date", "visit_date", "DATA_PRIEMA")
+
+
+def _preserve_precise_visit_date(
+    merged: Mapping[str, Any],
+    left: Mapping[str, Any],
+    right: Mapping[str, Any],
+) -> Mapping[str, Any]:
+    candidates = [
+        (key, value)
+        for source in (left, right)
+        for key in _VISIT_DATE_KEYS
+        if has_value(value := source.get(key))
+    ]
+    if not candidates:
+        return merged
+    best_key, best_value = max(
+        candidates,
+        key=lambda candidate: _date_precision(candidate[1]),
+    )
+    target_key = next((key for key in _VISIT_DATE_KEYS if key in merged), best_key)
+    result = dict(merged)
+    result[target_key] = best_value
+    return result
+
+
+def _date_precision(value: Any) -> int:
+    if isinstance(value, datetime):
+        return 2
+    if isinstance(value, bool):
+        return 0
+    if isinstance(value, date):
+        return 1
+    if isinstance(value, (int, float)):
+        integer = int(value)
+        compact_date = (
+            float(value).is_integer() and 10_000_000 <= integer <= 99_999_999
+        )
+        return 1 if compact_date else 2
+    text = clean_text(value)
+    if not text:
+        return 0
+    if "T" in text or re.search(r"\s\d{1,2}:\d{2}", text):
+        return 2
+    if re.fullmatch(r"[+-]?\d{9,}(?:\.\d+)?", text):
+        return 2
+    return int(normalize_date(text) is not None)
 
 
 def deduplicate(values: Iterable[str]) -> list[str]:

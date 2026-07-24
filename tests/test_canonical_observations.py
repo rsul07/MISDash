@@ -55,6 +55,31 @@ def test_laboratory_keeps_units_references_method_and_report_link() -> None:
     assert first_result.id in first_report.observation_ids
 
 
+def test_laboratory_preserves_clinical_result_comment() -> None:
+    bundle = build_observations(
+        {
+            "lab_issledovaniya": [
+                {
+                    "nomer_zakaza": "lab-1",
+                    "data_vzyatia": "2024-03-01",
+                    "REZULTATY": [
+                        {
+                            "pokazatel": "Калий",
+                            "REZULT": "5,4",
+                            "comment_lab": "гемолиз, интерпретировать с осторожностью",
+                        }
+                    ],
+                }
+            ]
+        }
+    )
+
+    result = bundle.observations[0]
+    assert result.context == {
+        "laboratory_comment": "гемолиз, интерпретировать с осторожностью"
+    }
+
+
 def test_direct_and_visit_observations_accept_dirty_shapes() -> None:
     data = {
         "vitals": {"v1": {"date": "01.03.2024", "glucose": "6,5"}},
@@ -79,6 +104,31 @@ def test_direct_and_visit_observations_accept_dirty_shapes() -> None:
     assert by_id["visit-1-body-weight"].value is not None
     assert by_id["visit-1-body-weight"].value.value == 80.5
     assert by_id["visit-1-oxygen-saturation"].value is not None
+
+
+def test_visit_observation_source_path_survives_deduplication() -> None:
+    data = {
+        "PRIEMY_VRACHA": [
+            {
+                "id_priema": "visit-1_dup",
+                "izmereniya": {"AD_sist": 140, "AD_diast": 90},
+            },
+            {
+                "id_priema": "visit-1",
+                "dt_priem": "2024-03-01",
+                "izmereniya": {"CHSS": 72},
+            },
+        ]
+    }
+
+    bundle = build_observations(data)
+
+    by_id = {item.id: item for item in bundle.observations}
+    blood_pressure = by_id["visit-1-blood-pressure"]
+    heart_rate = by_id["visit-1-heart-rate"]
+    assert blood_pressure.source.path == "PRIEMY_VRACHA[1].izmereniya"
+    assert blood_pressure.source.source_id == "visit-1"
+    assert heart_rate.source.path == "PRIEMY_VRACHA[1].izmereniya"
 
 
 def test_observation_adapters_tolerate_missing_blocks() -> None:

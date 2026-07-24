@@ -2,22 +2,37 @@ sequenceDiagram
     autonumber
     actor Doctor as Врач
     participant UI as Streamlit UI
+    participant Generator as src/generator
+    participant Pipeline as src/app/data.py
     participant Parser as MISParser
     participant Backend as DashboardService
     participant Calc as Clinical calculators
+    participant Rules as Red-flag rules
     participant Summary as SummaryService
     participant Gemini as Gemini API
 
-    Doctor->>UI: Загружает JSON пациента
-    UI->>Parser: MISParser(temp_path).parse_record()
+    Doctor->>UI: Выбирает источник данных
+    alt Загрузка готового JSON
+        Doctor->>UI: Загружает JSON пациента
+    else Синтетическая выгрузка
+        Doctor->>UI: Seed, годы, light + отправка формы
+        UI->>Generator: generate_json_bytes(config)
+        Generator-->>UI: UTF-8 JSON bytes
+    end
+
+    UI->>Pipeline: build_pipeline(file_bytes)
+    Pipeline->>Parser: MISParser(temp_path).parse_record()
     Parser->>Parser: нормализация и формирование PatientRecord
-    Parser-->>UI: PatientRecord 1.0
-    UI->>Backend: build(record)
+    Parser-->>Pipeline: PatientRecord 1.0
+    Pipeline->>Backend: build(record)
     Backend->>Calc: Рассчитать eGFR, липиды и пульсовое давление
     Calc-->>Backend: Значения + метод + source_ids
     Backend->>Backend: профиль, метрики, лента приёмов
-    Backend-->>UI: DashboardResponse 1.1
-    UI-->>Doctor: детерминированные разделы дашборда
+    Backend->>Rules: record + metrics + as_of
+    Rules-->>Backend: Упорядоченные RedFlag[]
+    Backend-->>Pipeline: DashboardResponse 1.1
+    Pipeline-->>UI: PatientRecord + DashboardResponse
+    UI-->>Doctor: профиль, графики, приёмы и красные флаги
 
     opt Врач нажал «Сформировать ИИ-сводку»
         Doctor->>UI: Явный запрос сводки

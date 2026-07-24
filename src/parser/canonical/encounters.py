@@ -11,7 +11,7 @@ from src.contracts.patient.v1 import Diagnosis, Encounter, Medication, Practitio
 from src.contracts.patient.v1.common import Coding
 
 from ..normalizers import clean_text
-from ..records import as_mapping, first, items, records, unique_visits
+from ..records import as_mapping, first, indexed_unique_visits, items, records
 from .common import event_id, original_date_text, source_reference
 from .dates import parse_clinical_date
 
@@ -32,10 +32,10 @@ def build_encounters(data: Mapping[str, Any]) -> EncounterBundle:
     )
     encounters: list[Encounter] = []
     medications: list[Medication] = []
-    for index, visit in enumerate(unique_visits(source)):
+    for index, (source_index, visit) in enumerate(indexed_unique_visits(source)):
         source_id = first(visit, "id_priema", "visit_id", "appointment_id", "id")
         encounter_id = canonical_encounter_id(index, source_id)
-        visit_medications = _build_medications(visit, index, encounter_id)
+        visit_medications = _build_medications(visit, source_index, encounter_id)
         medications.extend(visit_medications)
         follow_up_raw = first(visit, "sled_yavka", "follow_up_at", "next_visit")
         follow_up_at = parse_clinical_date(follow_up_raw)
@@ -43,7 +43,7 @@ def build_encounters(data: Mapping[str, Any]) -> EncounterBundle:
         encounters.append(
             Encounter(
                 id=encounter_id,
-                source=source_reference("PRIEMY_VRACHA", index, source_id),
+                source=source_reference("PRIEMY_VRACHA", source_index, source_id),
                 occurred_at=parse_clinical_date(
                     first(visit, "dt_priem", "date", "visit_date", "DATA_PRIEMA")
                 ),

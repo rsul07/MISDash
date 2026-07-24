@@ -7,6 +7,7 @@ from pathlib import Path
 
 from src.contracts.dashboard.v1 import DashboardResponse
 from src.contracts.patient.v1 import PatientRecord
+from src.red_flags import evaluate_red_flags
 from src.storage import load_patient_record
 
 from .metrics import build_metric_series
@@ -27,14 +28,16 @@ class DashboardService:
         generated_at = generated_at or datetime.now(timezone.utc)
         as_of = as_of or generated_at.date()
         profile = build_profile_projection(record, as_of=as_of)
+        metrics = build_metric_series(record)
         return DashboardResponse(
             generated_at=generated_at,
             patient=profile.patient,
             allergies=profile.allergies,
             conditions=profile.conditions,
             current_medications=profile.current_medications,
-            metrics=build_metric_series(record),
+            metrics=metrics,
             visits=build_visit_summaries(record),
+            red_flags=evaluate_red_flags(record, metrics, as_of=as_of),
         )
 
     def build_from_path(

@@ -9,7 +9,7 @@ from src.contracts.patient.v1 import Observation
 
 from ...extractors import extract_vitals_from_text
 from ...normalizers import valid_bp_pair, valid_number
-from ...records import as_mapping, first, unique_visits
+from ...records import as_mapping, first, indexed_unique_visits
 from ..common import source_reference
 from ..dates import parse_clinical_date
 from ..encounters import canonical_encounter_id
@@ -36,7 +36,7 @@ def build_visit_observations(data: Mapping[str, Any]) -> list[Observation]:
         "appointments",
     )
     result: list[Observation] = []
-    for index, visit in enumerate(unique_visits(source)):
+    for index, (source_index, visit) in enumerate(indexed_unique_visits(source)):
         source_id = first(visit, "id_priema", "visit_id", "appointment_id", "id")
         encounter_id = canonical_encounter_id(index, source_id)
         observed_at = parse_clinical_date(
@@ -46,7 +46,7 @@ def build_visit_observations(data: Mapping[str, Any]) -> list[Observation]:
             first(visit, "izmereniya", "measurements", "vitals")
         )
         source_ref = source_reference(
-            f"PRIEMY_VRACHA[{index}].izmereniya", source_id=source_id
+            f"PRIEMY_VRACHA[{source_index}].izmereniya", source_id=source_id
         )
         bp_pair, bp_method = _blood_pressure(visit, measurements)
         if bp_pair is not None:

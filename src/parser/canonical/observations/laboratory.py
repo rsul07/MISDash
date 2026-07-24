@@ -91,6 +91,9 @@ def _panel_results(
             continue
         source_id = first(item, "id_pokazatelya", "result_id", "id")
         code = clean_text(first(item, "kod_nsi", "code", "vneshniy_kod"))
+        laboratory_comment = clean_text(
+            first(item, "comment_lab", "comment", "note")
+        )
         value = quantity(
             first(item, "REZULT", "REZULTAT", "result", "value", "znachenie"),
             first(item, "ed_izm", "unit", "units"),
@@ -116,6 +119,11 @@ def _panel_results(
                 )
                 or None,
                 method=clean_text(first(item, "metod", "method")) or None,
+                context=(
+                    {"laboratory_comment": laboratory_comment}
+                    if laboratory_comment
+                    else {}
+                ),
                 status=clean_text(first(item, "status_rez", "status")) or None,
                 report_id=report_id,
             )
