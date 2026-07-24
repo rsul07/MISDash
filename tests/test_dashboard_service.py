@@ -37,6 +37,30 @@ def test_dashboard_service_builds_complete_frontend_response() -> None:
     assert response.ai_summary is None
 
 
+def test_dashboard_service_publishes_evaluated_red_flags() -> None:
+    record = _record()
+    record.observations.append(
+        Observation(
+            id="potassium-1",
+            source=SOURCE,
+            observed_at=date(2026, 7, 10),
+            category="laboratory",
+            coding=Coding(display="Калий"),
+            value=Quantity(value=6.5, unit="ммоль/л"),
+        )
+    )
+
+    response = DashboardService().build(
+        record,
+        as_of=date(2026, 7, 14),
+        generated_at=GENERATED_AT,
+    )
+
+    assert len(response.red_flags) == 1
+    assert response.red_flags[0].code == "latest-potassium-above-5-5"
+    assert response.red_flags[0].severity == "critical"
+
+
 def test_service_loads_canonical_record_from_json_boundary(tmp_path: Path) -> None:
     path = tmp_path / "patient_record.json"
     saved_path = save_patient_record(path, _record())
