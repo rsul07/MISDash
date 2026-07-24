@@ -18,7 +18,6 @@ from src.app.data import build_pipeline
 from src.app.source import render_patient_source
 from src.app.theme import (
     apply_app_theme,
-    render_app_header,
     render_empty_state,
     render_sidebar_header,
     render_source_status,
@@ -35,7 +34,6 @@ def run_app() -> None:
         initial_sidebar_state="expanded",
     )
     apply_app_theme()
-    render_app_header()
 
     with st.sidebar:
         render_sidebar_header()

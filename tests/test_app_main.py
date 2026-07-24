@@ -9,7 +9,6 @@ def test_page_configuration_has_no_training_copy(monkeypatch) -> None:
     streamlit = MagicMock()
     monkeypatch.setattr(main, "st", streamlit)
     monkeypatch.setattr(main, "apply_app_theme", MagicMock())
-    monkeypatch.setattr(main, "render_app_header", MagicMock())
     monkeypatch.setattr(main, "render_sidebar_header", MagicMock())
     monkeypatch.setattr(main, "render_patient_source", MagicMock(return_value=None))
     monkeypatch.setattr(main, "render_empty_state", MagicMock())

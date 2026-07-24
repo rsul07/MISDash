@@ -26,28 +26,12 @@ def apply_app_theme() -> None:
     st.markdown(f"<style>{_APP_CSS}</style>", unsafe_allow_html=True)
 
 
-def render_app_header() -> None:
-    """Render a compact product header aligned with the presentation style."""
-
-    st.markdown(
-        """
-        <header class="mis-app-header mis-enter">
-          <div>
-            <h1>MIS Dash</h1>
-            <p>Главное в истории пациента — в одном проверяемом представлении.</p>
-          </div>
-        </header>
-        """,
-        unsafe_allow_html=True,
-    )
-
-
 def render_sidebar_header() -> None:
     """Render the data-source heading in the dark navigation surface."""
 
     st.markdown(
         """
-        <div class="mis-sidebar-brand">MIS Dash</div>
+        <div class="mis-sidebar-title">JSON-файл пациента</div>
         """,
         unsafe_allow_html=True,
     )
@@ -75,7 +59,7 @@ def render_empty_state() -> None:
     st.markdown(
         """
         <section class="mis-empty-state mis-enter">
-          <div class="mis-empty-icon" aria-hidden="true"></div>
+          <h1>MIS Dash</h1>
           <h2>Откройте историю пациента</h2>
           <p>
             Загрузите JSON из МИС или создайте воспроизводимую синтетическую
@@ -251,7 +235,7 @@ html, body, [class*="css"] {{
   color: #ffffff !important;
 }}
 
-.mis-sidebar-brand {{
+.mis-sidebar-title {{
   margin: 0.25rem 0 1.75rem;
   color: white;
   font-size: 1.05rem;
@@ -259,25 +243,12 @@ html, body, [class*="css"] {{
   letter-spacing: -0.01em;
 }}
 
-.mis-app-header {{
-  padding-top: 1rem;
-  padding-bottom: 1.35rem;
-  margin-bottom: 0.8rem;
-  border-bottom: 1px solid var(--mis-border);
-}}
-
-.mis-app-header h1 {{
+.mis-empty-state h1 {{
   color: var(--mis-ink);
   font-size: clamp(2rem, 4vw, 3.15rem);
   line-height: 1;
   letter-spacing: -0.04em;
-  margin: 0.2rem 0 0.5rem;
-}}
-
-.mis-app-header p {{
-  color: var(--mis-muted);
-  font-size: 1rem;
-  margin: 0;
+  margin: 0 0 1.2rem;
 }}
 
 .mis-source-status {{
@@ -312,42 +283,10 @@ html, body, [class*="css"] {{
   box-shadow: var(--mis-shadow);
 }}
 
-.mis-empty-icon {{
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 3.5rem;
-  height: 3.5rem;
-  margin: 0 auto 1.25rem;
-  border-radius: 1rem;
-  background: var(--mis-navy);
-  color: var(--mis-teal);
-  font-size: 2rem;
-}}
-
-.mis-empty-icon::before,
-.mis-empty-icon::after {{
-  content: "";
-  position: absolute;
-  display: block;
-  border-radius: 999px;
-  background: var(--mis-teal);
-}}
-
-.mis-empty-icon::before {{
-  width: 1.35rem;
-  height: 0.22rem;
-}}
-
-.mis-empty-icon::after {{
-  width: 0.22rem;
-  height: 1.35rem;
-}}
-
 .mis-empty-state h2 {{
   color: var(--mis-ink);
-  font-size: 2rem;
-  margin: 0.4rem 0 0.65rem;
+  font-size: 1.65rem;
+  margin: 0 0 0.65rem;
 }}
 
 .mis-empty-state > p {{

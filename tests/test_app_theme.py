@@ -52,7 +52,6 @@ def test_headers_do_not_render_decorative_eyebrows(monkeypatch) -> None:
     streamlit = MagicMock()
     monkeypatch.setattr(theme, "st", streamlit)
 
-    theme.render_app_header()
     theme.render_sidebar_header()
     theme.render_empty_state()
     theme.render_section_header("Пациент", description="Основные сведения.")
@@ -67,3 +66,6 @@ def test_headers_do_not_render_decorative_eyebrows(monkeypatch) -> None:
     assert "Демонстрационный контур" not in rendered
     assert "mis-sidebar-logo" not in rendered
     assert "mis-app-mark" not in rendered
+    assert "mis-empty-icon" not in rendered
+    assert rendered.count("MIS Dash") == 1
+    assert "JSON-файл пациента" in rendered
