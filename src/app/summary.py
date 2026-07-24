@@ -21,10 +21,6 @@ from src.summarizer.prompt import PROMPT_VERSION
 
 _STATE_KEY = "clinical_summary_key"
 _STATE_MARKDOWN = "clinical_summary_markdown"
-_PRIVACY_NOTE = (
-    "Gemini Free Tier используется только с синтетическими данными. "
-    "Не загружайте реальные медицинские данные."
-)
 
 
 def render_summary_controls(
@@ -44,7 +40,6 @@ def render_summary_controls(
         st.session_state.pop(_STATE_MARKDOWN, None)
 
     render_section_header("ИИ-сводка")
-    st.caption(_PRIVACY_NOTE)
     if settings.api_key is None and service is None:
         st.warning(
             "Для генерации сводки добавьте GEMINI_API_KEY в локальный файл .env."

@@ -37,16 +37,17 @@ def render_sidebar_header() -> None:
     )
 
 
-def render_source_status(*, filename: str, origin: str) -> None:
-    """Show a quiet provenance badge instead of a full success alert."""
+def render_source_status(*, filename: str) -> None:
+    """Show a compact processed-file notice in the sidebar."""
 
-    source = "синтетическая выгрузка" if origin == "generated" else "загруженный JSON"
     st.markdown(
         (
             '<div class="mis-source-status mis-enter">'
             '<span class="mis-source-dot"></span>'
-            f"<strong>{escape(filename)}</strong>"
-            f"<span>{escape(source)} · данные обработаны</span>"
+            "<div>"
+            "<strong>Файл обработан</strong>"
+            f"<span>{escape(filename)}</span>"
+            "</div>"
             "</div>"
         ),
         unsafe_allow_html=True,
@@ -273,20 +274,38 @@ html, body, [class*="css"] {{
 
 .mis-source-status {{
   display: flex;
-  align-items: center;
-  gap: 0.55rem;
-  color: var(--mis-muted);
-  font-size: 0.78rem;
-  margin: 0.75rem 0 1rem;
+  align-items: flex-start;
+  gap: 0.65rem;
+  margin: 1rem 0 0.25rem;
+  padding: 0.7rem 0.75rem;
+  border: 1px solid rgba(16, 168, 137, 0.25);
+  border-radius: 0.8rem;
+  background: rgba(16, 168, 137, 0.08);
+}}
+
+.mis-source-status strong,
+.mis-source-status span {{
+  display: block;
 }}
 
 .mis-source-status strong {{
-  color: var(--mis-ink);
+  color: #ffffff;
+  font-size: 0.78rem;
+}}
+
+.mis-source-status div > span {{
+  max-width: 12rem;
+  margin-top: 0.15rem;
+  overflow-wrap: anywhere;
+  color: #b9cfdf;
+  font-size: 0.69rem;
 }}
 
 .mis-source-dot {{
+  flex: 0 0 auto;
   width: 0.5rem;
   height: 0.5rem;
+  margin-top: 0.3rem;
   border-radius: 50%;
   background: var(--mis-teal);
   box-shadow: 0 0 0 0.25rem rgba(16, 168, 137, 0.12);

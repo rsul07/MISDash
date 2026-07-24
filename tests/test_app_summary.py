@@ -95,6 +95,7 @@ def test_summary_is_generated_once_and_survives_rerun(
     )
     assert second.ai_summary == first.ai_summary
     assert streamlit.button.call_args_list[1].args[0] == "Сформировать заново"
+    streamlit.caption.assert_not_called()
 
 
 def test_changing_file_clears_previous_summary(

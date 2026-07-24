@@ -50,10 +50,8 @@ def run_app() -> None:
     except (ValueError, ValidationError, OSError) as error:
         st.error(f"Не удалось обработать файл: {error}")
     else:
-        render_source_status(
-            filename=patient_input.filename,
-            origin=patient_input.origin,
-        )
+        with st.sidebar:
+            render_source_status(filename=patient_input.filename)
         render_dashboard(file_bytes, record, dashboard)
 
 

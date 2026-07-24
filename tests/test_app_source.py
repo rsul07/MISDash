@@ -117,7 +117,7 @@ def test_generated_json_persists_without_repeated_generation(
     )
     assert streamlit.download_button.call_count == 2
     captions = [call.args[0] for call in streamlit.caption.call_args_list]
-    assert any("не уменьшает плотность дневников" in text for text in captions)
+    assert all("не уменьшает плотность дневников" not in text for text in captions)
 
 
 def test_new_generator_parameters_replace_session_payload(

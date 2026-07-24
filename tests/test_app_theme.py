@@ -27,12 +27,13 @@ def test_source_status_escapes_filename(monkeypatch) -> None:
     streamlit = MagicMock()
     monkeypatch.setattr(theme, "st", streamlit)
 
-    theme.render_source_status(filename="<patient>.json", origin="upload")
+    theme.render_source_status(filename="<patient>.json")
 
     html = streamlit.markdown.call_args.args[0]
     assert "<patient>" not in html
     assert "&lt;patient&gt;.json" in html
-    assert "загруженный JSON" in html
+    assert "Файл обработан" in html
+    assert "данные обработаны" not in html
 
 
 def test_sidebar_action_buttons_have_readable_resting_state(monkeypatch) -> None:

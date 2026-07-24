@@ -98,10 +98,6 @@ def _render_generator() -> PatientInput | None:
                 "исследований."
             ),
         )
-        st.caption(
-            "Режим light не уменьшает плотность дневников самоконтроля "
-            "АД и глюкозы."
-        )
         submitted = st.form_submit_button(
             "Сгенерировать и открыть",
             type="primary",
