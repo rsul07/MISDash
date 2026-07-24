@@ -18,6 +18,8 @@ def test_theme_uses_presentation_palette_and_reduced_motion(monkeypatch) -> None
     assert theme.AMBER in css
     assert "prefers-reduced-motion: reduce" in css
     assert "mis-fade-up" in css
+    assert '[data-testid="stHeaderActionElements"]' in css
+    assert "display: none !important;" in css
     assert streamlit.markdown.call_args.kwargs["unsafe_allow_html"] is True
 
 

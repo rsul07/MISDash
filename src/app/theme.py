@@ -127,6 +127,10 @@ html, body, [class*="css"] {{
   backdrop-filter: blur(0.75rem);
 }}
 
+[data-testid="stHeaderActionElements"] {{
+  display: none !important;
+}}
+
 [data-testid="stSidebar"] {{
   background: var(--mis-navy);
   border-right: 0;
