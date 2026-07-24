@@ -219,4 +219,3 @@ def source_id_candidates(value: Any) -> set[str]:
 
 def top_level_block(block: str) -> str:
     return re.split(r"[.\[]", block, maxsplit=1)[0]
-

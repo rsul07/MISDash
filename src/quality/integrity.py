@@ -264,4 +264,3 @@ def _deleted_lab_paths(data: Mapping[str, Any]) -> set[str]:
                     f"REZULTATY[{result_index}]"
                 )
     return result
-

@@ -146,4 +146,3 @@ def _laboratory_comments_check(
             *[f"missing_or_changed={path}" for path in mismatches[:6]],
         ),
     )
-

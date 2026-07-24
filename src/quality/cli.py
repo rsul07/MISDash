@@ -71,4 +71,3 @@ def main(argv: Sequence[str] | None = None) -> int:
     else:
         print(rendered, end="")
     return 0 if report.passed else 1
-

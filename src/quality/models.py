@@ -98,4 +98,3 @@ class BatchQualityReport:
             ),
             "cases": [case.to_dict() for case in self.cases],
         }
-

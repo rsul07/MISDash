@@ -208,4 +208,3 @@ def _diary_count_check(
             f"raw_glucose_rows={len(glucose)}",
         ),
     )
-

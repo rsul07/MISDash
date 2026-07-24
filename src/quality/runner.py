@@ -74,4 +74,3 @@ def _render_case(case: CaseQualityReport) -> list[str]:
 
 def _escape(value: str) -> str:
     return value.replace("|", "\\|").replace("\n", " ")
-

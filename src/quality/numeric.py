@@ -142,4 +142,3 @@ def _same_number(expected: float, actual: float | None) -> bool:
         rel_tol=1e-9,
         abs_tol=1e-9,
     )
-

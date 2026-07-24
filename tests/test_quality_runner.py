@@ -57,4 +57,3 @@ def test_module_cli_writes_json_report(tmp_path: Path) -> None:
         "light": True,
     }
     assert f"Quality report: {output}" in completed.stdout
-
