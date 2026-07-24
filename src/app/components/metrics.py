@@ -135,11 +135,12 @@ def _series_for_group(
     group: MetricGroup,
     metrics_by_code: dict[str, MetricSeries],
 ) -> list[MetricSeries]:
-    return [
+    series = [
         metrics_by_code[code]
         for code in group.codes
         if code in metrics_by_code
     ]
+    return sorted(series, key=lambda item: item.calculation is None)
 
 
 def _build_figures(
@@ -168,6 +169,7 @@ def _build_figure(
 
     for item in series:
         color = METRIC_COLORS.get(item.code, BLUE)
+        is_calculated = item.calculation is not None
         has_interpretation = any(point.interpretation for point in item.points)
         interpretation_line = (
             "Категория: %{customdata[1]}<br>" if has_interpretation else ""
@@ -179,7 +181,7 @@ def _build_figure(
                 customdata=[
                     [
                         "Расчётный показатель"
-                        if item.calculation is not None
+                        if is_calculated
                         else point.source_category,
                         point.interpretation or "",
                     ]
@@ -191,9 +193,10 @@ def _build_figure(
                     else "lines+markers"
                 ),
                 name=item.display,
-                line={"color": color, "width": 2.35},
+                line={"color": color, "width": 3.6 if is_calculated else 2.35},
                 marker={
-                    "size": 5.5,
+                    "size": 7 if is_calculated else 5.5,
+                    "symbol": "diamond" if is_calculated else "circle",
                     "color": color,
                     "line": {"color": "#FFFFFF", "width": 0.8},
                 },
@@ -301,9 +304,14 @@ def _render_latest_values(series: list[MetricSeries]) -> None:
                 if item.calculation is not None
                 else ""
             )
+            card_class = (
+                "mis-latest-value mis-latest-value--calculated mis-enter"
+                if item.calculation is not None
+                else "mis-latest-value mis-enter"
+            )
             column.markdown(
                 (
-                    '<div class="mis-latest-value mis-enter">'
+                    f'<div class="{card_class}">'
                     f"<span>{escape(item.display)}</span>"
                     f"<strong>{point.value:g}{unit}</strong>"
                     '<div class="mis-latest-meta">'

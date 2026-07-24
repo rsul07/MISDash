@@ -615,6 +615,15 @@ html, body, [class*="css"] {{
   box-shadow: 0 0.18rem 0.75rem rgba(8, 42, 76, 0.04);
 }}
 
+.mis-latest-value--calculated {{
+  border-color: #a9d8cd;
+  background:
+    linear-gradient(135deg, rgba(16, 168, 137, 0.12), rgba(255, 255, 255, 0.9));
+  box-shadow:
+    inset 0.2rem 0 0 var(--mis-teal),
+    0 0.22rem 0.85rem rgba(16, 120, 105, 0.08);
+}}
+
 .mis-latest-value > span {{
   display: block;
   min-height: 2rem;

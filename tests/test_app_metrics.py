@@ -217,6 +217,40 @@ def test_metric_groups_include_calculated_backend_codes() -> None:
     assert "calculated-ldl-cholesterol" in groups["lipids"]
 
 
+def test_calculated_metrics_are_rendered_first_and_emphasized() -> None:
+    measured = _series("systolic", "Систолическое АД", "mmHg", 120)
+    calculated = _series(
+        "pulse-pressure",
+        "Пульсовое давление",
+        "mmHg",
+        40,
+    )
+    calculated.calculation = CalculationInfo(
+        code="pulse-pressure",
+        description="Разница.",
+        purpose="Контекст.",
+        method="SBP - DBP",
+        standard="ESC",
+    )
+    group = component.METRIC_GROUPS[0]
+
+    ordered = component._series_for_group(
+        group,
+        {
+            measured.code: measured,
+            calculated.code: calculated,
+        },
+    )
+    figure = component._build_figure("mmHg", ordered)
+
+    assert [item.code for item in ordered] == ["pulse-pressure", "systolic"]
+    assert figure.data[0].name == "Пульсовое давление"
+    assert figure.data[0].line.width == 3.6
+    assert figure.data[0].marker.symbol == "diamond"
+    assert figure.data[1].line.width == 2.35
+    assert figure.data[1].marker.symbol == "circle"
+
+
 def test_metric_hover_shows_backend_interpretation() -> None:
     series = _series(
         "egfr-ckd-epi-2021",
@@ -261,6 +295,7 @@ def test_latest_value_tiles_use_last_point_and_calculation_badge(
     assert "72 mmHg" in html
     assert "02.01.2025" in html
     assert "расчётный" in html
+    assert "mis-latest-value--calculated" in html
 
 
 def _dashboard(*metrics: MetricSeries) -> DashboardResponse:

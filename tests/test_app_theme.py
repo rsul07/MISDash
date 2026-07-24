@@ -103,3 +103,16 @@ def test_red_flag_cards_prioritize_title_and_explanation(monkeypatch) -> None:
     assert ".mis-flag-heading" in css
     assert "font-size: 0.9rem;" in css
     assert "line-height: 1.55;" in css
+
+
+def test_calculated_metric_card_has_distinct_visual_treatment(
+    monkeypatch,
+) -> None:
+    streamlit = MagicMock()
+    monkeypatch.setattr(theme, "st", streamlit)
+
+    theme.apply_app_theme()
+
+    css = streamlit.markdown.call_args.args[0]
+    assert ".mis-latest-value--calculated" in css
+    assert "inset 0.2rem 0 0 var(--mis-teal)" in css
