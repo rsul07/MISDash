@@ -25,7 +25,7 @@ class ClinicalSummary(ContractModel):
     textual_findings: list[SummaryItem] = Field(
         default_factory=list,
         max_length=3,
-        description="Non-numerical clinical and instrumental findings from source text.",
+        description="Important clinical and instrumental findings from source text.",
     )
     open_loops: list[SummaryItem] = Field(
         default_factory=list,

@@ -1,0 +1,68 @@
+flowchart LR
+    doctor["Врач"]
+    mis["JSON-выгрузка МИС"]
+    gemini["Gemini API"]
+
+    subgraph system["MIS Dash · одно Python/Streamlit-приложение"]
+        direction TB
+
+        upload["src/app<br/><b>Загрузка и состояние сессии</b>"]
+
+        subgraph deterministic["Детерминированный контур"]
+            direction LR
+            parser["src/parser<br/><b>MISParser</b><br/><small>tolerant reader и нормализация</small>"]
+            record["src/contracts/patient/v1<br/><b>PatientRecord 1.0</b><br/><small>каноническая история</small>"]
+            backend["src/backend<br/><b>DashboardService</b><br/><small>frontend-проекция</small>"]
+            response["src/contracts/dashboard/v1<br/><b>DashboardResponse 1.1</b><br/><small>контракт интерфейса</small>"]
+
+            parser --> record --> backend --> response
+        end
+
+        subgraph enrichment["Расчёты и хранение"]
+            direction LR
+            storage[("src/storage<br/><b>patient_record.json</b><br/><small>опционально</small>")]
+            selection["src/backend/calculations<br/><b>Выбор совместимых входов</b>"]
+            calculators["src/calculators<br/><b>Клинические калькуляторы</b><br/><small>чистые формулы</small>"]
+            selection --> calculators
+        end
+
+        subgraph narrative["ИИ-контур · только по кнопке"]
+            direction LR
+            summary["src/summarizer<br/><b>SummaryService</b><br/><small>ограниченный текстовый контекст</small>"]
+            clinical["src/contracts/summarizer/v1<br/><b>ClinicalSummary</b><br/><small>structured output</small>"]
+            summary_ui["src/app/summary.py<br/><b>Форматирование Markdown</b><br/><small>обновление DashboardResponse.ai_summary</small>"]
+            summary --> clinical --> summary_ui
+        end
+
+        views["src/app<br/><b>Экраны Streamlit</b><br/><small>профиль · динамика · приёмы · ИИ-сводка</small>"]
+
+        upload --> parser
+        record -. "parse(): save" .-> storage
+        storage -. "build_from_path(): load" .-> backend
+        backend --> selection
+        calculators -. "производные ряды" .-> response
+        record -. "тексты приёмов и заключений" .-> summary
+        response -. "факты профиля" .-> summary
+        response --> views
+        summary_ui --> views
+    end
+
+    mis -->|"формирует выгрузку"| doctor
+    doctor -->|"загружает JSON"| upload
+    summary -->|"HTTPS · prompt + JSON Schema"| gemini
+    gemini -->|"JSON"| summary
+
+    classDef person fill:#084c82,stroke:#052f52,color:#ffffff,stroke-width:3px;
+    classDef module fill:#e0f2fe,stroke:#0284c7,color:#0f172a,stroke-width:2px;
+    classDef contract fill:#f3e8ff,stroke:#9333ea,color:#3b0764,stroke-width:2px;
+    classDef ai fill:#ecfdf5,stroke:#059669,color:#064e3b,stroke-width:2px;
+    classDef external fill:#e2e8f0,stroke:#64748b,color:#0f172a,stroke-width:2px;
+    class doctor person;
+    class upload,views,summary_ui,parser,backend,selection,calculators module;
+    class record,response,storage,clinical contract;
+    class summary ai;
+    class mis,gemini external;
+    style deterministic fill:#f8fafc,stroke:#94a3b8,stroke-width:1px
+    style enrichment fill:#f8fafc,stroke:#cbd5e1,stroke-width:1px
+    style narrative fill:#f0fdf4,stroke:#86efac,stroke-width:1px
+    style system fill:#ffffff,stroke:#334155,stroke-width:3px

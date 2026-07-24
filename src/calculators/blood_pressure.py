@@ -31,7 +31,8 @@ PULSE_PRESSURE = CalculatorDefinition(
         "САД и ДАД должны относиться к одному измерению.",
     ),
     references=(
-        "https://academic.oup.com/eurheartj/article/45/38/3912/7741010",
+        "https://doi.org/10.1093/eurheartj/ehae178",
+        "https://doi.org/10.1093/eurheartj/ehq165",
     ),
 )
 

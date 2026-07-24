@@ -25,19 +25,22 @@ fi
 
 for source in "${sources[@]}"; do
     name="$(basename "$source" .mmd)"
+    svg_output="$OUTPUT_DIR/$name.svg"
+    png_output="$OUTPUT_DIR/$name.png"
 
+    rm -f "$svg_output" "$png_output"
     npx -y "@mermaid-js/mermaid-cli@$MERMAID_VERSION" \
         -p "$SCRIPT_DIR/puppeteer-config.json" \
         -c "$SCRIPT_DIR/mermaid-config.json" \
         -i "$source" \
-        -o "$OUTPUT_DIR/$name.svg" \
+        -o "$svg_output" \
         -b white
 
     npx -y "@mermaid-js/mermaid-cli@$MERMAID_VERSION" \
         -p "$SCRIPT_DIR/puppeteer-config.json" \
         -c "$SCRIPT_DIR/mermaid-config.json" \
         -i "$source" \
-        -o "$OUTPUT_DIR/$name.png" \
+        -o "$png_output" \
         -b white \
         -w 1600 \
         -H 900 \

@@ -25,5 +25,8 @@ data/*
 !data/patient_small_example.json
 data/output_test/
 
-# Локальная сборка отчёта
+# Локальная сборка и персональные материалы отчёта
 docs/report/build/
+docs/report/project.typ
+docs/report/private/*
+!docs/report/private/*.example

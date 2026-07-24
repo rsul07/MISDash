@@ -9,22 +9,24 @@ sequenceDiagram
     participant Gemini as Gemini API
 
     Doctor->>UI: Загружает JSON пациента
-    UI->>Parser: parse_record(file)
+    UI->>Parser: MISParser(temp_path).parse_record()
     Parser->>Parser: нормализация и формирование PatientRecord
-    Parser-->>UI: PatientRecord v1
+    Parser-->>UI: PatientRecord 1.0
     UI->>Backend: build(record)
     Backend->>Calc: Рассчитать eGFR, липиды и пульсовое давление
     Calc-->>Backend: Значения + метод + source_ids
     Backend->>Backend: профиль, метрики, лента приёмов
-    Backend-->>UI: DashboardResponse v1
+    Backend-->>UI: DashboardResponse 1.1
     UI-->>Doctor: детерминированные разделы дашборда
 
     opt Врач нажал «Сформировать ИИ-сводку»
         Doctor->>UI: Явный запрос сводки
         UI->>Summary: summarize(record, dashboard)
-        Summary->>Summary: Ограничить контекст и отметить уже видимые факты
+        Summary->>Summary: Ограничить приёмы и инструментальные заключения
         Summary->>Gemini: Prompt + JSON Schema
         Gemini-->>Summary: ClinicalSummary JSON
-        Summary-->>UI: Проверенный Markdown
-        UI-->>Doctor: Новые изменения, находки и датированный план
+        Summary->>Summary: Проверить schema и source_ids
+        Summary-->>UI: ClinicalSummary
+        UI->>UI: Форматировать Markdown и сохранить в session_state
+        UI-->>Doctor: Симптомы, результаты исследований и открытые планы
     end

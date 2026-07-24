@@ -1,7 +1,7 @@
 # Модуль `parser`: устройство и поток данных
 
 `src/parser` преобразует грязную JSON-выгрузку МИС в единственный
-канонический контракт `PatientRecord v1`. Parser не строит представления
+канонический контракт `PatientRecord 1.0`. Parser не строит представления
 конкретного экрана и не выполняет необратимую дневную агрегацию.
 
 ## Публичный API
@@ -28,29 +28,18 @@ print(paths["patient_record"])
 2. переменная окружения `OUTPUT_DIR`;
 3. `data/processed/`.
 
+Локальный `.env` загружается при импорте пакета через `python-dotenv`.
+`OUTPUT_DIR` применяется только к `parse()`/`run()`: `parse_record()` ничего
+не записывает и не создаёт выходную директорию.
+
 ## Архитектура
 
-```mermaid
-flowchart LR
-    JSON[Грязный JSON МИС] --> Engine[engine.py<br/>MISParser]
-    Engine --> Builder[canonical/builder.py]
-    Builder --> Patient[patient.py]
-    Builder --> Social[social.py]
-    Builder --> Encounters[encounters.py]
-    Builder --> Observations[observations/]
-    Builder --> History[history.py]
-    Patient --> Record[PatientRecord v1]
-    Social --> Record
-    Encounters --> Record
-    Observations --> Record
-    History --> Record
-    Record --> Backend[DashboardService]
-    Record -. parse() .-> Storage[src/storage]
-    Storage --> JSONOut[patient_record.json]
-```
+![Компоненты parser](diagrams/rendered/parser-components.svg)
 
 `engine.py` — тонкий фасад. Вся mapping-логика разделена по клиническим
-доменам и композируется только в `canonical/builder.py`.
+доменам и композируется только в `canonical/builder.py`. Сплошные стрелки на
+схеме показывают основной путь построения контракта, пунктирные — внутренние
+зависимости builder и адаптеров.
 
 ### Ответственность модулей
 
@@ -61,10 +50,12 @@ flowchart LR
 | `normalizers.py` | Даты, числа, текст и физиологическая валидация. |
 | `records.py` | Безопасный доступ, альтернативные имена, keyed-коллекции, дубли приёмов. |
 | `extractors.py` | Детерминированное извлечение АД и ЧСС из текста. |
+| `canonical/common.py` | `SourceReference`, внутренние ID и сохранение исходного текста неточной даты для полей с парным `*_at_text`. |
+| `canonical/dates.py` | Клинические `date`/`datetime`, Unix timestamp и контроль точности даты. |
 | `canonical/patient.py` | Пациент, аллергии и хронические состояния. |
 | `canonical/social.py` | Образ жизни и семейный анамнез. |
 | `canonical/encounters.py` | Полные приёмы, диагнозы и назначения. |
-| `canonical/observations/` | Дневник, лаборатория, измерения приёмов и structured vitals. |
+| `canonical/observations/` | Отдельные адаптеры дневника, лаборатории, прямых и извлечённых измерений приёмов. |
 | `canonical/history.py` | Операции, госпитализации, прививки и инструментальные отчёты. |
 | `canonical/builder.py` | Сборка корневого `PatientRecord`. |
 | `src/storage/patient_records.py` | Валидация и атомарная запись канонического JSON для `parse()`. |
@@ -76,7 +67,7 @@ sequenceDiagram
     actor Client as Клиент
     participant Parser as MISParser
     participant Builder as canonical/builder.py
-    participant Contract as PatientRecord v1
+    participant Contract as PatientRecord 1.0
     participant FS as Файловая система
 
     Client->>Parser: parse_record()
@@ -111,14 +102,18 @@ sequenceDiagram
 Даты поддерживают ISO, `DD.MM.YYYY`, `DD/MM/YYYY`, `YYYYMMDD`, варианты со
 временем и Unix timestamp. Canonical adapter сохраняет `datetime`, если время
 известно. Неполный год вроде `2017` не превращается в искусственное
-`2017-01-01`; исходный текст сохраняется рядом.
+`2017-01-01`. Исходный текст сохраняется в парном поле только там, где оно
+предусмотрено контрактом: для повторного приёма, процедуры, госпитализации,
+прививки и даты инструментального отчёта. Для даты рождения, начала состояния
+и даты самого приёма нераспознанное значение становится `None`: отдельных
+`birth_date_text`, `onset_text` и `occurred_at_text` в `PatientRecord 1.0` нет.
 
 Числа принимаются как `int`, `float` или строки с точкой/запятой. Булевы,
 бесконечные и составные строки числами не считаются.
 `NaN` и бесконечности также считаются пропусками при выборе fallback alias.
 
 ```python
-from src.parser.engine import normalize_date, parse_number
+from src.parser.normalizers import normalize_date, parse_number
 
 normalize_date("14.03.1967")  # "1967-03-14"
 parse_number("46,5")          # 46.5
@@ -142,6 +137,10 @@ Regex для свободного текста используется как f
 полей. Систолическое и диастолическое давление никогда не смешиваются из
 разных фрагментов.
 
+Лабораторная панель представлена `DiagnosticReport`, а отдельные результаты —
+связанными с ним `Observation` через `report_id`/`observation_ids`. Значения не
+копируются в `components` отчёта и не схлопываются по дню.
+
 ## Выходной контракт
 
 Корень `PatientRecord` содержит `schema_version: "1.0"`, пациента и коллекции
@@ -157,7 +156,8 @@ Regex для свободного текста используется как f
 2. создать отдельный адаптер в `src/parser/canonical/`;
 3. подключить его только в `canonical/builder.py`;
 4. добавить contract-тесты и тесты грязных форм входа;
-5. обновить этот документ и `docs/data_contract.md`.
+5. обновить этот документ, [контракт данных](data_contract.md) и при
+   необходимости общую [диаграмму parser](diagrams/README.md).
 
 Новое альтернативное имя поля добавляется рядом с текущими aliases в
 соответствующем adapter. Новый формат даты добавляется в normalizer с

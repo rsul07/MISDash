@@ -33,8 +33,10 @@ MIS Dash (`mis_dash`) — прототип веб-дашборда для про
 
 ## Документация
 
+- [Архитектура и границы модулей](docs/architecture.md)
 - [Индекс документации](docs/README.md)
-- [Отчёт и архитектурные диаграммы](docs/report/README.md)
+- [Исходники отчёта](docs/report/README.md)
+- [Архитектурные диаграммы](docs/diagrams/README.md)
 
 ## Быстрый старт
 
@@ -63,6 +65,8 @@ MIS Dash (`mis_dash`) — прототип веб-дашборда для про
 
    Для ИИ-сводки укажите в `.env` собственный `GEMINI_API_KEY`. Ключ
    необязателен для остальных функций приложения и не должен попадать в Git.
+   `OUTPUT_DIR` управляет только сохранением через `MISParser.parse()` и не
+   влияет на загруженные в Streamlit файлы.
 
 4. Запустите тесты и приложение:
 
@@ -96,12 +100,14 @@ python -m src.summarizer.check
 ```text
 mis_dash/
 ├── data/                 # синтетическая эталонная выгрузка
-├── docs/                 # документация, отчёт и диаграммы
+├── docs/
+│   ├── diagrams/         # общие Mermaid-исходники и SVG/PNG
+│   └── report/           # Typst-отчёт и публичные шаблоны
 ├── src/
 │   ├── app/              # Streamlit-интерфейс
-│   ├── backend/          # построение DashboardResponse v1
+│   ├── backend/          # построение DashboardResponse 1.1
 │   ├── calculators/      # объяснимые медицинские формулы
-│   ├── contracts/        # PatientRecord v1 и DashboardResponse v1
+│   ├── contracts/        # PatientRecord, DashboardResponse, ClinicalSummary
 │   ├── parser/           # разбор и нормализация выгрузки МИС
 │   ├── storage/          # чтение и атомарная запись PatientRecord
 │   └── summarizer/       # контекст, Gemini-клиент и валидация сводки
