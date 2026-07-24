@@ -65,10 +65,11 @@ def test_metrics_render_only_active_available_group(
     )
     assert figures[0].data[0].line.color == component.METRIC_COLORS["systolic"]
     assert figures[0].layout.paper_bgcolor == "rgba(0,0,0,0)"
+    streamlit.slider.assert_not_called()
     streamlit.info.assert_not_called()
 
 
-def test_dense_series_use_lines_and_default_to_latest_quarter() -> None:
+def test_dense_series_use_lines_without_repeated_axis_controls() -> None:
     dense = _series(
         "systolic",
         "Систолическое АД",
@@ -84,18 +85,56 @@ def test_dense_series_use_lines_and_default_to_latest_quarter() -> None:
         point_count=2,
     )
 
-    figure = component._build_figure("mmHg", [dense, sparse])
+    visible_range = component._default_date_range([dense, sparse])
+    figure = component._build_figure("mmHg", [dense, sparse], visible_range)
 
     assert figure.data[0].mode == "lines"
     assert figure.data[1].mode == "lines+markers"
-    assert [
-        button.label for button in figure.layout.xaxis.rangeselector.buttons
-    ] == ["3 мес", "1 год", "3 года", "Всё"]
     visible_range = figure.layout.xaxis.range
     assert visible_range is not None
     assert visible_range[1] - visible_range[0] == timedelta(days=90)
+    assert figure.layout.title.text is None
+    assert figure.layout.xaxis.title.text is None
+    assert figure.layout.yaxis.title.text is None
+    assert figure.layout.xaxis.rangeselector.buttons == ()
+    assert figure.layout.legend.entrywidth == 220
     assert figure.layout.transition.duration == 250
     assert figure.layout.yaxis.gridcolor == "#E4EDF2"
+
+
+def test_metric_group_uses_one_shared_date_range(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    streamlit = MagicMock()
+    streamlit.tabs.return_value = [_Tab(open=True)]
+    streamlit.columns.return_value = [MagicMock(), MagicMock()]
+    start = datetime(2024, 1, 1)
+    end = datetime(2025, 1, 1)
+    streamlit.slider.return_value = (start, end)
+    monkeypatch.setattr(component, "st", streamlit)
+    monkeypatch.setattr(component, "render_section_header", MagicMock())
+    glucose = _series(
+        "glucose",
+        "Глюкоза крови",
+        "mmol/L",
+        6.5,
+        point_count=367,
+    )
+    hba1c = _series(
+        "hba1c",
+        "Гликированный гемоглобин",
+        "%",
+        7.1,
+        point_count=367,
+    )
+
+    component.render_metrics(_dashboard(glucose, hba1c))
+
+    streamlit.slider.assert_called_once()
+    assert streamlit.slider.call_args.args[0] == "Период отображения"
+    figures = [call.args[0] for call in streamlit.plotly_chart.call_args_list]
+    assert len(figures) == 2
+    assert all(tuple(figure.layout.xaxis.range) == (start, end) for figure in figures)
 
 
 def test_metrics_handle_missing_series_and_empty_points(

@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta, timezone
 from html import escape
+from math import ceil
 
 import plotly.graph_objects as go
 import streamlit as st
@@ -12,7 +13,6 @@ import streamlit as st
 from src.app.theme import (
     AMBER,
     BLUE,
-    BORDER,
     CRITICAL,
     INK,
     MUTED,
@@ -68,12 +68,6 @@ METRIC_GROUPS = (
 DENSE_SERIES_POINT_THRESHOLD = 500
 DEFAULT_VISIBLE_DAYS = 365
 DENSE_VISIBLE_DAYS = 90
-RANGE_SELECTOR_BUTTONS = (
-    {"count": 3, "label": "3 мес", "step": "month", "stepmode": "backward"},
-    {"count": 1, "label": "1 год", "step": "year", "stepmode": "backward"},
-    {"count": 3, "label": "3 года", "step": "year", "stepmode": "backward"},
-    {"label": "Всё", "step": "all"},
-)
 METRIC_COLORS = {
     "systolic": BLUE,
     "diastolic": TEAL,
@@ -123,7 +117,10 @@ def render_metrics(dashboard: DashboardResponse) -> None:
 
         with tab:
             _render_latest_values(series)
-            for figure_index, figure in enumerate(_build_figures(series)):
+            visible_range = _render_date_range(group, series)
+            for figure_index, figure in enumerate(
+                _build_figures(series, visible_range)
+            ):
                 st.plotly_chart(
                     figure,
                     key=f"metric-chart-{group.key}-{figure_index}",
@@ -145,7 +142,10 @@ def _series_for_group(
     ]
 
 
-def _build_figures(series: list[MetricSeries]) -> list[go.Figure]:
+def _build_figures(
+    series: list[MetricSeries],
+    visible_range: tuple[datetime, datetime] | None = None,
+) -> list[go.Figure]:
     """Build separate figures for incompatible measurement units."""
 
     by_unit: dict[str | None, list[MetricSeries]] = {}
@@ -153,12 +153,16 @@ def _build_figures(series: list[MetricSeries]) -> list[go.Figure]:
         by_unit.setdefault(item.unit, []).append(item)
 
     return [
-        _build_figure(unit, unit_series)
+        _build_figure(unit, unit_series, visible_range)
         for unit, unit_series in by_unit.items()
     ]
 
 
-def _build_figure(unit: str | None, series: list[MetricSeries]) -> go.Figure:
+def _build_figure(
+    unit: str | None,
+    series: list[MetricSeries],
+    visible_range: tuple[datetime, datetime] | None = None,
+) -> go.Figure:
     figure = go.Figure()
     unit_label = unit or ""
 
@@ -203,36 +207,34 @@ def _build_figure(unit: str | None, series: list[MetricSeries]) -> go.Figure:
             )
         )
 
-    xaxis: dict[str, object] = {
-        "title": "Дата",
-        "rangeselector": {"buttons": RANGE_SELECTOR_BUTTONS},
-    }
-    default_range = _default_date_range(series)
-    if default_range is not None:
-        xaxis["range"] = default_range
+    xaxis: dict[str, object] = {}
+    if visible_range is not None:
+        xaxis["range"] = visible_range
+
+    legend_rows = max(1, ceil(len(series) / 2))
 
     figure.update_layout(
         height=390,
         hovermode="closest",
-        title={
-            "text": f"Динамика · {unit_label or 'без единицы'}",
-            "x": 0.025,
-            "xanchor": "left",
-            "font": {"size": 16, "color": INK},
-        },
         legend={
             "title": {"text": ""},
             "orientation": "h",
             "yanchor": "bottom",
             "y": 1.02,
-            "xanchor": "right",
-            "x": 1,
+            "xanchor": "left",
+            "x": 0,
+            "entrywidth": 220,
+            "entrywidthmode": "pixels",
             "font": {"color": MUTED, "size": 11},
         },
-        margin={"l": 54, "r": 24, "t": 78, "b": 48},
+        margin={
+            "l": 48,
+            "r": 24,
+            "t": 28 + legend_rows * 24,
+            "b": 30,
+        },
         xaxis=xaxis,
         yaxis={
-            "title": {"text": unit or "Значение", "font": {"color": MUTED}},
             "gridcolor": "#E4EDF2",
             "zeroline": False,
             "tickfont": {"color": MUTED},
@@ -252,17 +254,36 @@ def _build_figure(unit: str | None, series: list[MetricSeries]) -> go.Figure:
         gridcolor="#EEF3F6",
         zeroline=False,
         tickfont={"color": MUTED},
-        title_font={"color": MUTED},
-        rangeselector={
-            "buttons": RANGE_SELECTOR_BUTTONS,
-            "bgcolor": "#F0F6F8",
-            "activecolor": "#DDECF0",
-            "bordercolor": BORDER,
-            "borderwidth": 1,
-            "font": {"color": INK, "size": 10},
-        },
     )
     return figure
+
+
+def _render_date_range(
+    group: MetricGroup,
+    series: list[MetricSeries],
+) -> tuple[datetime, datetime] | None:
+    """Render one shared date range control for every chart in a group."""
+
+    bounds = _date_bounds(series)
+    if bounds is None or bounds[0] == bounds[1]:
+        return bounds
+
+    default_range = _default_date_range(series) or bounds
+    selected = st.slider(
+        "Период отображения",
+        min_value=bounds[0],
+        max_value=bounds[1],
+        value=default_range,
+        format="DD.MM.YYYY",
+        key=f"metric-range-{group.key}",
+    )
+    if (
+        isinstance(selected, tuple)
+        and len(selected) == 2
+        and all(isinstance(value, datetime) for value in selected)
+    ):
+        return selected
+    return default_range
 
 
 def _render_latest_values(series: list[MetricSeries]) -> None:
@@ -353,16 +374,11 @@ def _format_input_value(value: float | int | str) -> str:
 def _default_date_range(
     series: list[MetricSeries],
 ) -> tuple[datetime, datetime] | None:
-    observed_at = [
-        _as_utc_naive(point.observed_at)
-        for item in series
-        for point in item.points
-    ]
-    if not observed_at:
+    bounds = _date_bounds(series)
+    if bounds is None:
         return None
 
-    latest = max(observed_at)
-    earliest = min(observed_at)
+    earliest, latest = bounds
     visible_days = (
         DENSE_VISIBLE_DAYS
         if any(
@@ -374,6 +390,19 @@ def _default_date_range(
     if latest - earliest <= timedelta(days=visible_days):
         return None
     return latest - timedelta(days=visible_days), latest
+
+
+def _date_bounds(
+    series: list[MetricSeries],
+) -> tuple[datetime, datetime] | None:
+    observed_at = [
+        _as_utc_naive(point.observed_at)
+        for item in series
+        for point in item.points
+    ]
+    if not observed_at:
+        return None
+    return min(observed_at), max(observed_at)
 
 
 def _as_utc_naive(value: date | datetime) -> datetime:
