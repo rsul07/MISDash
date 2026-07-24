@@ -10,6 +10,7 @@
 2. [Контракты данных](data_contract.md) — точные формы `PatientRecord`,
    `DashboardResponse` и правила версионирования.
 3. Документ нужного модуля:
+   [generator](generator.md) →
    [parser](parser.md) →
    [backend](backend.md) →
    [калькуляторы](calculators.md) →
@@ -26,6 +27,7 @@
 | --- | --- | --- |
 | [Архитектура](architecture.md) | общий runtime-поток и зависимости | `src/` и общие диаграммы |
 | [Контракты](data_contract.md) | каноническая и frontend-схемы | `src/contracts/` |
+| [Generator](generator.md) | синтетические грязные выгрузки, API и CLI | `src/generator/`, `data/patient_etalon.json` |
 | [Parser](parser.md) | чтение грязного JSON и канонизация | `src/parser/`, `src/storage/` |
 | [Backend](backend.md) | профиль, метрики и приёмы | `src/backend/` |
 | [Калькуляторы](calculators.md) | формулы, стандарты и ограничения | `src/calculators/`, `src/backend/calculations/` |
@@ -39,8 +41,9 @@
 | Область | Состояние |
 | --- | --- |
 | Parser и `PatientRecord 1.0` | реализованы и покрыты тестами |
+| Встроенный generator | реализован; доступен из Python, CLI и Streamlit |
 | Backend и `DashboardResponse 1.1` | реализованы |
-| Streamlit/Plotly dashboard | реализован для синтетической выгрузки |
+| Streamlit/Plotly dashboard | реализован для загрузки и генерации синтетической выгрузки |
 | Четыре клинических калькулятора | реализованы с трассировкой входов |
 | Gemini-сводка | реализована, вызывается только по кнопке |
 | Красные флаги | контракт и отображение есть, rules engine не реализован |
