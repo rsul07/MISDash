@@ -33,7 +33,6 @@ def run_app() -> None:
         page_icon="🩺",
         layout="wide",
         initial_sidebar_state="expanded",
-        menu_items={"About": "MIS Dash · синтетический учебный прототип"},
     )
     apply_app_theme()
     render_app_header()

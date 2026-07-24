@@ -64,3 +64,6 @@ def test_headers_do_not_render_decorative_eyebrows(monkeypatch) -> None:
     assert "КЛИНИЧЕСКАЯ СВОДКА" not in rendered
     assert "НАЧАЛО РАБОТЫ" not in rendered
     assert "ИСТОЧНИК ДАННЫХ" not in rendered
+    assert "Демонстрационный контур" not in rendered
+    assert "mis-sidebar-logo" not in rendered
+    assert "mis-app-mark" not in rendered

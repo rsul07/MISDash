@@ -36,9 +36,6 @@ def render_app_header() -> None:
             <h1>MIS Dash</h1>
             <p>Главное в истории пациента — в одном проверяемом представлении.</p>
           </div>
-          <div class="mis-app-mark" aria-hidden="true">
-            <span></span><span></span>
-          </div>
         </header>
         """,
         unsafe_allow_html=True,
@@ -50,13 +47,7 @@ def render_sidebar_header() -> None:
 
     st.markdown(
         """
-        <div class="mis-sidebar-brand">
-          <div class="mis-sidebar-logo">M</div>
-          <div>
-            <strong>MIS Dash</strong>
-            <span>Демонстрационный контур</span>
-          </div>
-        </div>
+        <div class="mis-sidebar-brand">MIS Dash</div>
         """,
         unsafe_allow_html=True,
     )
@@ -261,45 +252,14 @@ html, body, [class*="css"] {{
 }}
 
 .mis-sidebar-brand {{
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
   margin: 0.25rem 0 1.75rem;
-}}
-
-.mis-sidebar-logo {{
-  display: grid;
-  place-items: center;
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 0.75rem;
-  background: linear-gradient(145deg, var(--mis-teal), var(--mis-blue));
   color: white;
-  font-size: 1.15rem;
-  font-weight: 800;
-  box-shadow: 0 0.5rem 1.4rem rgba(16, 168, 137, 0.22);
-}}
-
-.mis-sidebar-brand strong,
-.mis-sidebar-brand span {{
-  display: block;
-}}
-
-.mis-sidebar-brand strong {{
-  color: white;
-  font-size: 1rem;
-}}
-
-.mis-sidebar-brand span {{
-  color: #b9cfdf;
-  font-size: 0.75rem;
-  margin-top: 0.08rem;
+  font-size: 1.05rem;
+  font-weight: 750;
+  letter-spacing: -0.01em;
 }}
 
 .mis-app-header {{
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
   padding-top: 1rem;
   padding-bottom: 1.35rem;
   margin-bottom: 0.8rem;
@@ -318,36 +278,6 @@ html, body, [class*="css"] {{
   color: var(--mis-muted);
   font-size: 1rem;
   margin: 0;
-}}
-
-.mis-app-mark {{
-  position: relative;
-  width: 3rem;
-  height: 3rem;
-  border-radius: 1rem;
-  background: var(--mis-navy);
-  box-shadow: var(--mis-shadow);
-}}
-
-.mis-app-mark span {{
-  position: absolute;
-  display: block;
-  background: var(--mis-teal);
-  border-radius: 1rem;
-}}
-
-.mis-app-mark span:first-child {{
-  width: 1.6rem;
-  height: 0.34rem;
-  left: 0.7rem;
-  top: 1.33rem;
-}}
-
-.mis-app-mark span:last-child {{
-  width: 0.34rem;
-  height: 1.6rem;
-  left: 1.33rem;
-  top: 0.7rem;
 }}
 
 .mis-source-status {{
@@ -870,9 +800,6 @@ html, body, [class*="css"] {{
   [data-testid="stMainBlockContainer"] {{
     padding-left: 1rem;
     padding-right: 1rem;
-  }}
-  .mis-app-mark {{
-    display: none;
   }}
   .mis-empty-state {{
     margin-top: 2rem;
