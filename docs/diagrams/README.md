@@ -9,8 +9,8 @@
 - `system-architecture` — два источника JSON, модули, контракты и внешние
   системы MIS Dash;
 - `parser-components` — внутренняя структура parser;
-- `processing-sequence` — выбор загрузки или generator, общий pipeline и
-  отдельный вызов Gemini.
+- `processing-sequence` — выбор загрузки или generator, общий pipeline,
+  детерминированные красные флаги и отдельный вызов Gemini.
 
 Диаграмма системы намеренно использует реальные пути пакетов. `PatientRecord`,
 `DashboardResponse` и `ClinicalSummary` обозначают Pydantic-контракты, а не

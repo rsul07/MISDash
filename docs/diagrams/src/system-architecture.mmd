@@ -32,6 +32,7 @@ flowchart LR
             storage[("src/storage<br/><b>patient_record.json</b><br/><small>опционально</small>")]
             selection["src/backend/calculations<br/><b>Выбор совместимых входов</b>"]
             calculators["src/calculators<br/><b>Клинические калькуляторы</b><br/><small>чистые формулы</small>"]
+            rules["src/red_flags<br/><b>Rules engine</b><br/><small>объяснимые клинические сигналы</small>"]
             selection --> calculators
         end
 
@@ -50,6 +51,9 @@ flowchart LR
         storage -. "build_from_path(): load" .-> backend
         backend --> selection
         calculators -. "производные ряды" .-> response
+        calculators -. "готовые метрики" .-> rules
+        record -. "диагнозы и приёмы" .-> rules
+        rules -. "red_flags" .-> response
         record -. "тексты приёмов и заключений" .-> summary
         response -. "факты профиля" .-> summary
         response --> views
@@ -68,7 +72,7 @@ flowchart LR
     classDef data fill:#fff7ed,stroke:#f59e0b,color:#7c2d12,stroke-width:2px;
     classDef external fill:#e2e8f0,stroke:#64748b,color:#0f172a,stroke-width:2px;
     class doctor person;
-    class source,generator,views,summary_ui,parser,backend,selection,calculators module;
+    class source,generator,views,summary_ui,parser,backend,selection,calculators,rules module;
     class raw data;
     class record,response,storage,clinical contract;
     class summary ai;

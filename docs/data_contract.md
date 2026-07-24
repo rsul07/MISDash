@@ -235,10 +235,12 @@ DashboardResponse
 `calculation`, а точка — `calculation_inputs` и `source_ids`. Формулы не
 записываются обратно в `PatientRecord`.
 
-`red_flags` уже зарезервирован контрактом и отображается интерфейсом, но
-детерминированный rules engine пока не реализован. `ai_summary` заполняется
-приложением только после успешной валидации `ClinicalSummary` и форматирования
-его в Markdown. Подробнее: [backend](backend.md), [frontend](frontend.md) и
+`red_flags` заполняется детерминированным rules engine и содержит стабильный
+код, уровень `info`/`warning`/`critical`, заголовок и объяснение с фактическим
+значением и датой. Добавление реализации не изменило форму контракта, поэтому
+версия осталась `1.1`. `ai_summary` заполняется приложением только после
+успешной валидации `ClinicalSummary` и форматирования его в Markdown. Подробнее:
+[backend](backend.md), [красные флаги](red_flags.md), [frontend](frontend.md) и
 [summarizer](summarizer.md).
 
 ## Версионирование

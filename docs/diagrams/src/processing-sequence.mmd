@@ -7,6 +7,7 @@ sequenceDiagram
     participant Parser as MISParser
     participant Backend as DashboardService
     participant Calc as Clinical calculators
+    participant Rules as Red-flag rules
     participant Summary as SummaryService
     participant Gemini as Gemini API
 
@@ -27,9 +28,11 @@ sequenceDiagram
     Backend->>Calc: Рассчитать eGFR, липиды и пульсовое давление
     Calc-->>Backend: Значения + метод + source_ids
     Backend->>Backend: профиль, метрики, лента приёмов
+    Backend->>Rules: record + metrics + as_of
+    Rules-->>Backend: Упорядоченные RedFlag[]
     Backend-->>Pipeline: DashboardResponse 1.1
     Pipeline-->>UI: PatientRecord + DashboardResponse
-    UI-->>Doctor: детерминированные разделы дашборда
+    UI-->>Doctor: профиль, графики, приёмы и красные флаги
 
     opt Врач нажал «Сформировать ИИ-сводку»
         Doctor->>UI: Явный запрос сводки
