@@ -73,7 +73,26 @@ def test_generator_waits_for_explicit_submit(
 
     assert source.render_patient_source() is None
     generate.assert_not_called()
+    streamlit.button.assert_called_once_with(
+        "Случайный seed",
+        key=source._RANDOM_SEED_KEY,
+        on_click=source._randomize_seed,
+        width="stretch",
+    )
     streamlit.download_button.assert_not_called()
+
+
+def test_random_seed_button_only_replaces_seed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    streamlit = _streamlit(source.GENERATED_SOURCE)
+    monkeypatch.setattr(source, "st", streamlit)
+    monkeypatch.setattr(source.secrets, "randbelow", MagicMock(return_value=123456))
+
+    source._randomize_seed()
+
+    assert streamlit.session_state[source._SEED_KEY] == 123456
+    source.secrets.randbelow.assert_called_once_with(source._MAX_SEED + 1)
 
 
 def test_generated_json_persists_without_repeated_generation(

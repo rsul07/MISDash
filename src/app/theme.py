@@ -233,6 +233,28 @@ html, body, [class*="css"] {{
   color: #ffffff !important;
 }}
 
+[data-testid="stSidebar"] [data-testid="stNumberInputStepDown"],
+[data-testid="stSidebar"] [data-testid="stNumberInputStepUp"],
+[data-testid="stSidebar"] [data-testid="InputInstructions"] {{
+  display: none !important;
+}}
+
+[data-testid="stSidebar"] [data-testid="stButton"] button {{
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.22);
+}}
+
+[data-testid="stSidebar"] [data-testid="stButton"] button,
+[data-testid="stSidebar"] [data-testid="stButton"] button p,
+[data-testid="stSidebar"] [data-testid="stButton"] button span {{
+  color: #ffffff !important;
+}}
+
+[data-testid="stSidebar"] [data-testid="stButton"] button:hover {{
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.35);
+}}
+
 .mis-sidebar-title {{
   margin: 0.25rem 0 1.75rem;
   color: white;

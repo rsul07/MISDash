@@ -48,6 +48,9 @@ def test_sidebar_action_buttons_have_readable_resting_state(monkeypatch) -> None
     assert '[data-testid="stDownloadButton"] button {' in css
     assert "background: var(--mis-action);" in css
     assert '[data-testid="stDownloadButton"] button p' in css
+    assert '[data-testid="stNumberInputStepDown"]' in css
+    assert '[data-testid="stNumberInputStepUp"]' in css
+    assert '[data-testid="InputInstructions"]' in css
 
 
 def test_headers_do_not_render_decorative_eyebrows(monkeypatch) -> None:
