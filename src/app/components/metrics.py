@@ -134,7 +134,7 @@ def render_metrics(dashboard: DashboardResponse) -> None:
                 st.plotly_chart(
                     figure,
                     key=f"metric-chart-{group.key}-{figure_index}",
-                    use_container_width=True,
+                    width="stretch",
                     config={"displayModeBar": False},
                     theme=None,
                 )

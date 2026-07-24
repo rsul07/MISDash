@@ -93,14 +93,6 @@ def _split_explanation(explanation: str) -> tuple[str, str]:
 def render_ai_summary(dashboard: DashboardResponse) -> None:
     """Display a previously generated summary from DashboardResponse v1."""
 
-    render_section_header(
-        "ИИ-сводка",
-        eyebrow="СВОБОДНЫЙ ТЕКСТ",
-        description=(
-            "Gemini анализирует жалобы, анамнез и заключения исследований; "
-            "числовые тренды остаются на графиках."
-        ),
-    )
     if dashboard.ai_summary:
         with st.container(border=True):
             st.markdown(

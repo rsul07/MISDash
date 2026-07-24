@@ -35,7 +35,7 @@ def render_patient_source() -> PatientInput | None:
     source = st.radio(
         "Источник данных",
         (UPLOAD_SOURCE, GENERATED_SOURCE),
-        horizontal=True,
+        horizontal=False,
         key=_SOURCE_KEY,
     )
     if source == UPLOAD_SOURCE:

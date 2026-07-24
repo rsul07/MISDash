@@ -19,7 +19,7 @@ SOURCE = SourceReference(block="test")
 @pytest.mark.parametrize(
     ("selected", "expected"),
     [
-        (component.OVERVIEW, ("patient", "flags")),
+        (component.OVERVIEW, ("patient", "flags", "context")),
         (component.METRICS, ("metrics",)),
         (component.VISITS, ("visits",)),
     ],
@@ -62,7 +62,7 @@ def test_summary_section_keeps_generation_explicit(
 
     renderers["controls"].assert_called_once()
     renderers["summary"].assert_called_once_with(generated)
-    for name in ("patient", "flags", "metrics", "visits"):
+    for name in ("patient", "flags", "context", "metrics", "visits"):
         renderers[name].assert_not_called()
 
 
@@ -78,12 +78,14 @@ def test_missing_selection_falls_back_to_overview(
 
     renderers["patient"].assert_called_once()
     renderers["flags"].assert_called_once()
+    renderers["context"].assert_called_once()
 
 
 def _renderer_mocks(monkeypatch: pytest.MonkeyPatch) -> dict[str, MagicMock]:
     names = {
         "patient": "render_patient_card",
         "flags": "render_red_flags",
+        "context": "render_patient_context",
         "metrics": "render_metrics",
         "visits": "render_visits",
         "controls": "render_summary_controls",

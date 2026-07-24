@@ -8,6 +8,7 @@ from src.app.components import (
     render_ai_summary,
     render_metrics,
     render_patient_card,
+    render_patient_context,
     render_red_flags,
     render_visits,
 )
@@ -48,3 +49,4 @@ def render_dashboard(
     else:
         render_patient_card(dashboard)
         render_red_flags(dashboard)
+        render_patient_context(dashboard)

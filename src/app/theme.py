@@ -86,7 +86,7 @@ def render_empty_state() -> None:
     st.markdown(
         """
         <section class="mis-empty-state mis-enter">
-          <div class="mis-empty-icon" aria-hidden="true">＋</div>
+          <div class="mis-empty-icon" aria-hidden="true"></div>
           <div class="mis-eyebrow">НАЧАЛО РАБОТЫ</div>
           <h2>Откройте историю пациента</h2>
           <p>
@@ -154,7 +154,7 @@ html, body, [class*="css"] {{
 
 [data-testid="stMainBlockContainer"] {{
   max-width: 82rem;
-  padding-top: 2rem;
+  padding-top: 3.25rem;
   padding-bottom: 4rem;
 }}
 
@@ -170,6 +170,7 @@ html, body, [class*="css"] {{
 
 [data-testid="stSidebar"] [data-testid="stSidebarContent"] {{
   padding-top: 1.2rem;
+  overflow-x: hidden !important;
 }}
 
 [data-testid="stSidebar"] h1,
@@ -190,10 +191,18 @@ html, body, [class*="css"] {{
 }}
 
 [data-testid="stSidebar"] [data-baseweb="radio"] {{
+  width: 100%;
+  min-width: 0;
   background: rgba(255, 255, 255, 0.07);
   border-radius: 0.75rem;
   padding: 0.55rem 0.65rem;
   margin-bottom: 0.35rem;
+}}
+
+[data-testid="stSidebar"] [data-baseweb="radio"] > div:last-child {{
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }}
 
 [data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] {{
@@ -204,6 +213,15 @@ html, body, [class*="css"] {{
 [data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] small,
 [data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] span {{
   color: #d9e8f1;
+}}
+
+[data-testid="stSidebar"] [data-testid="stFileUploader"] button {{
+  color: var(--mis-navy);
+}}
+
+[data-testid="stSidebar"] [data-testid="stBaseButton-primary"],
+[data-testid="stSidebar"] [data-testid="stDownloadButton"] button {{
+  color: #ffffff;
 }}
 
 .mis-sidebar-brand {{
@@ -254,6 +272,7 @@ html, body, [class*="css"] {{
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
+  padding-top: 1rem;
   padding-bottom: 1.35rem;
   margin-bottom: 0.8rem;
   border-bottom: 1px solid var(--mis-border);
@@ -343,6 +362,7 @@ html, body, [class*="css"] {{
 }}
 
 .mis-empty-icon {{
+  position: relative;
   display: grid;
   place-items: center;
   width: 3.5rem;
@@ -352,6 +372,25 @@ html, body, [class*="css"] {{
   background: var(--mis-navy);
   color: var(--mis-teal);
   font-size: 2rem;
+}}
+
+.mis-empty-icon::before,
+.mis-empty-icon::after {{
+  content: "";
+  position: absolute;
+  display: block;
+  border-radius: 999px;
+  background: var(--mis-teal);
+}}
+
+.mis-empty-icon::before {{
+  width: 1.35rem;
+  height: 0.22rem;
+}}
+
+.mis-empty-icon::after {{
+  width: 0.22rem;
+  height: 1.35rem;
 }}
 
 .mis-empty-state h2 {{
@@ -404,14 +443,14 @@ html, body, [class*="css"] {{
 }}
 
 .mis-patient-heading {{
-  padding: 0.15rem 0 0.8rem;
+  padding: 0.2rem 0.35rem 0.2rem 0;
 }}
 
 .mis-patient-heading h2 {{
   color: var(--mis-ink);
-  font-size: clamp(1.75rem, 3vw, 2.45rem);
+  font-size: clamp(1.25rem, 2vw, 1.7rem);
   letter-spacing: -0.035em;
-  line-height: 1.08;
+  line-height: 1.15;
   margin: 0.2rem 0 0;
 }}
 
@@ -421,6 +460,34 @@ html, body, [class*="css"] {{
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.08em;
+}}
+
+.mis-patient-stat {{
+  min-height: 5.8rem;
+  padding: 0.75rem 0.7rem;
+  border-radius: 0.8rem;
+  background: #f7fafc;
+  border: 1px solid #e2edf2;
+}}
+
+.mis-patient-stat span,
+.mis-patient-stat strong {{
+  display: block;
+}}
+
+.mis-patient-stat span {{
+  min-height: 1.15rem;
+  color: var(--mis-muted);
+  font-size: 0.7rem;
+  line-height: 1.2;
+}}
+
+.mis-patient-stat strong {{
+  color: var(--mis-ink);
+  font-size: clamp(1.05rem, 1.7vw, 1.45rem);
+  line-height: 1.15;
+  margin-top: 0.4rem;
+  overflow-wrap: anywhere;
 }}
 
 .mis-clinical-panel {{

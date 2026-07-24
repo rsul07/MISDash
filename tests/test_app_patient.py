@@ -15,7 +15,7 @@ from src.contracts.dashboard.v1 import (
 )
 
 
-def test_patient_card_renders_profile_and_clinical_panels(monkeypatch) -> None:
+def test_patient_card_renders_compact_profile(monkeypatch) -> None:
     streamlit, card, stats, clinical = _streamlit()
     monkeypatch.setattr(component, "st", streamlit)
     section_header = MagicMock()
@@ -47,14 +47,39 @@ def test_patient_card_renders_profile_and_clinical_panels(monkeypatch) -> None:
     )
 
     section_header.assert_called_once()
-    hero = card.markdown.call_args.args[0]
+    hero = card.columns.return_value[0].markdown.call_args.args[0]
     assert "Иванов Иван Иванович" in hero
     assert "ID · patient-1" in hero
-    assert stats[0].metric.call_args.args == ("Возраст", "46 лет")
-    assert stats[1].metric.call_args.args == ("Пол", "М")
-    assert stats[2].metric.call_args.args == ("Группа крови", "A(II) Rh+")
-    assert stats[3].metric.call_args.args == ("BMI", "27.8")
-    assert stats[4].metric.call_args.args == ("Вес", "90.0 кг")
+    stat_html = [item.markdown.call_args.args[0] for item in stats]
+    assert "Возраст" in stat_html[0] and "46 лет" in stat_html[0]
+    assert "Пол" in stat_html[1] and ">М<" in stat_html[1]
+    assert "Группа крови" in stat_html[2] and "A(II) Rh+" in stat_html[2]
+    assert "BMI" in stat_html[3] and "27.8" in stat_html[3]
+    assert "Вес" in stat_html[4] and "90.0 кг" in stat_html[4]
+
+
+def test_patient_context_renders_three_clinical_panels(monkeypatch) -> None:
+    streamlit, _, _, clinical = _streamlit()
+    monkeypatch.setattr(component, "st", streamlit)
+    monkeypatch.setattr(component, "render_section_header", MagicMock())
+
+    component.render_patient_context(
+        _dashboard(
+            patient=DashboardPatient(id="patient-1", full_name="Пациент"),
+            allergies=[AllergySummary(agent="Пенициллин", reaction="сыпь")],
+            conditions=[
+                ConditionSummary(code="I10", display="Гипертензия", stage="II")
+            ],
+            current_medications=[
+                MedicationSummary(
+                    name="Препарат",
+                    dose="10 мг",
+                    frequency="1 раз в день",
+                )
+            ],
+        )
+    )
+
     allergy_html = clinical[0].markdown.call_args.args[0]
     condition_html = clinical[1].markdown.call_args.args[0]
     medication_html = clinical[2].markdown.call_args.args[0]
@@ -68,21 +93,19 @@ def test_patient_card_escapes_values_and_handles_empty_lists(monkeypatch) -> Non
     monkeypatch.setattr(component, "st", streamlit)
     monkeypatch.setattr(component, "render_section_header", MagicMock())
 
-    component.render_patient_card(
-        _dashboard(
-            patient=DashboardPatient(
-                id="<patient>",
-                full_name="<script>alert(1)</script>",
-            )
+    dashboard = _dashboard(
+        patient=DashboardPatient(
+            id="<patient>",
+            full_name="<script>alert(1)</script>",
         )
     )
+    component.render_patient_card(dashboard)
+    component.render_patient_context(dashboard)
 
-    hero = card.markdown.call_args.args[0]
+    hero = card.columns.return_value[0].markdown.call_args.args[0]
     assert "<script>" not in hero
     assert "&lt;script&gt;" in hero
-    assert [item.metric.call_args.args[1] for item in stats] == [
-        "Нет данных"
-    ] * 5
+    assert all("Нет данных" in item.markdown.call_args.args[0] for item in stats)
     assert all("Нет сведений" in item.markdown.call_args.args[0] for item in clinical)
 
 
@@ -105,9 +128,11 @@ def _streamlit() -> tuple[
     streamlit = MagicMock()
     card = MagicMock()
     stats = [MagicMock() for _ in range(5)]
+    hero_and_stats = [MagicMock(), *stats]
     clinical = [MagicMock() for _ in range(3)]
-    card.columns.side_effect = [stats, clinical]
+    card.columns.return_value = hero_and_stats
     streamlit.container.return_value = card
+    streamlit.columns.return_value = clinical
     return streamlit, card, stats, clinical
 
 

@@ -56,7 +56,7 @@ def test_metrics_render_only_active_available_group(
         "metric-chart-blood-pressure-0",
     ]
     assert all(
-        call.kwargs["use_container_width"] is True
+        call.kwargs["width"] == "stretch"
         for call in streamlit.plotly_chart.call_args_list
     )
     assert all(

@@ -23,7 +23,7 @@ _MISSING = "Нет данных"
 
 
 def render_patient_card(dashboard: DashboardResponse) -> None:
-    """Render the patient hero and three concise clinical collections."""
+    """Render the patient hero without pushing clinical signals below the fold."""
 
     patient = dashboard.patient
     render_section_header(
@@ -33,7 +33,8 @@ def render_patient_card(dashboard: DashboardResponse) -> None:
     )
 
     card = st.container(border=True)
-    card.markdown(
+    columns = card.columns((2.35, 1, 1, 1, 1, 1), gap="small")
+    columns[0].markdown(
         (
             '<span class="mis-patient-marker"></span>'
             '<div class="mis-patient-heading mis-enter">'
@@ -44,14 +45,29 @@ def render_patient_card(dashboard: DashboardResponse) -> None:
         unsafe_allow_html=True,
     )
 
-    stats = card.columns(5, gap="small")
-    stats[0].metric("Возраст", _format_age(patient.age))
-    stats[1].metric("Пол", _format_gender(patient.gender))
-    stats[2].metric("Группа крови", patient.blood_group or _MISSING)
-    stats[3].metric("BMI", _format_number(patient.bmi))
-    stats[4].metric("Вес", _format_weight(patient.last_weight_kg))
+    values = (
+        ("Возраст", _format_age(patient.age)),
+        ("Пол", _format_gender(patient.gender)),
+        ("Группа крови", patient.blood_group or _MISSING),
+        ("BMI", _format_number(patient.bmi)),
+        ("Вес", _format_weight(patient.last_weight_kg)),
+    )
+    for column, (label, value) in zip(columns[1:], values, strict=True):
+        column.markdown(
+            _stat_html(label, value),
+            unsafe_allow_html=True,
+        )
 
-    clinical = card.columns((1, 1.35, 1.65), gap="medium")
+
+def render_patient_context(dashboard: DashboardResponse) -> None:
+    """Render allergies, diagnoses and current therapy below active signals."""
+
+    render_section_header(
+        "Клинический контекст",
+        eyebrow="ИСТОРИЯ",
+        description="Аллергии, хронические состояния и актуальные назначения.",
+    )
+    clinical = st.columns((1, 1.35, 1.65), gap="medium")
     clinical[0].markdown(
         _allergies_html(dashboard.allergies),
         unsafe_allow_html=True,
@@ -145,6 +161,15 @@ def _clinical_panel(title: str, count: int, content: str) -> str:
         "</div>"
         f'<div class="mis-clinical-list">{content}</div>'
         "</section>"
+    )
+
+
+def _stat_html(label: str, value: str) -> str:
+    return (
+        '<div class="mis-patient-stat">'
+        f"<span>{escape(label)}</span>"
+        f"<strong>{escape(value)}</strong>"
+        "</div>"
     )
 
 
