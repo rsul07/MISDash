@@ -20,23 +20,21 @@ from src.app.components import (
     render_red_flags,
     render_visits,
 )
-from src.app.data import build_dashboard, build_patient_record
+from src.app.data import build_pipeline
+from src.app.source import render_patient_source
 from src.app.summary import render_summary_controls
 
 
 st.set_page_config(page_title="MIS Dash")
 st.title("MIS Dash")
 
-uploaded_file = st.file_uploader("Загрузите выгрузку пациента", type=["json"])
+patient_input = render_patient_source()
 
-if uploaded_file is None:
-    st.info("Загрузите JSON-файл пациента, чтобы сформировать дашборд.")
-else:
-    file_bytes = uploaded_file.getvalue()
+if patient_input is not None:
+    file_bytes = patient_input.file_bytes
     try:
         with st.spinner("Обрабатываем данные пациента…"):
-            record = build_patient_record(file_bytes)
-            dashboard = build_dashboard(file_bytes)
+            record, dashboard = build_pipeline(file_bytes)
     except (ValueError, ValidationError, OSError) as error:
         st.error(f"Не удалось обработать файл: {error}")
     else:
