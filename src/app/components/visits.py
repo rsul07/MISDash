@@ -18,7 +18,6 @@ def render_visits(dashboard: DashboardResponse) -> None:
 
     render_section_header(
         "Врачебные приёмы",
-        eyebrow="ХРОНОЛОГИЯ",
         description=f"В доступной истории: {len(dashboard.visits)} приёмов.",
     )
     if not dashboard.visits:

@@ -33,7 +33,6 @@ def render_app_header() -> None:
         """
         <header class="mis-app-header mis-enter">
           <div>
-            <div class="mis-eyebrow">КЛИНИЧЕСКАЯ СВОДКА</div>
             <h1>MIS Dash</h1>
             <p>Главное в истории пациента — в одном проверяемом представлении.</p>
           </div>
@@ -58,7 +57,6 @@ def render_sidebar_header() -> None:
             <span>Демонстрационный контур</span>
           </div>
         </div>
-        <div class="mis-sidebar-section">ИСТОЧНИК ДАННЫХ</div>
         """,
         unsafe_allow_html=True,
     )
@@ -87,7 +85,6 @@ def render_empty_state() -> None:
         """
         <section class="mis-empty-state mis-enter">
           <div class="mis-empty-icon" aria-hidden="true"></div>
-          <div class="mis-eyebrow">НАЧАЛО РАБОТЫ</div>
           <h2>Откройте историю пациента</h2>
           <p>
             Загрузите JSON из МИС или создайте воспроизводимую синтетическую
@@ -107,7 +104,6 @@ def render_empty_state() -> None:
 def render_section_header(
     title: str,
     *,
-    eyebrow: str,
     description: str | None = None,
 ) -> None:
     """Render consistent hierarchy for dashboard sections."""
@@ -116,7 +112,6 @@ def render_section_header(
     st.markdown(
         (
             '<div class="mis-section-heading mis-enter">'
-            f'<div class="mis-eyebrow">{escape(eyebrow)}</div>'
             f"<h2>{escape(title)}</h2>"
             f"{paragraph}"
             "</div>"
@@ -184,10 +179,6 @@ html, body, [class*="css"] {{
 
 [data-testid="stSidebar"] [data-testid="stCaptionContainer"] {{
   color: #b9cfdf;
-}}
-
-[data-testid="stSidebar"] [data-testid="stRadio"] > label {{
-  display: none;
 }}
 
 [data-testid="stSidebar"] [data-baseweb="radio"] {{
@@ -305,14 +296,6 @@ html, body, [class*="css"] {{
   margin-top: 0.08rem;
 }}
 
-.mis-sidebar-section {{
-  color: #7fcfc0;
-  font-size: 0.7rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  margin-bottom: 0.6rem;
-}}
-
 .mis-app-header {{
   display: flex;
   align-items: flex-start;
@@ -365,13 +348,6 @@ html, body, [class*="css"] {{
   height: 1.6rem;
   left: 1.33rem;
   top: 0.7rem;
-}}
-
-.mis-eyebrow {{
-  color: var(--mis-action);
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
 }}
 
 .mis-source-status {{

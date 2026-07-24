@@ -45,7 +45,6 @@ def render_summary_controls(
 
     render_section_header(
         "ИИ-сводка",
-        eyebrow="СВОБОДНЫЙ ТЕКСТ",
         description=(
             "Gemini анализирует жалобы, анамнез и заключения исследований; "
             "числовые тренды остаются на графиках."

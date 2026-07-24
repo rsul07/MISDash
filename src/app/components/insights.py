@@ -31,7 +31,6 @@ def render_red_flags(dashboard: DashboardResponse) -> None:
 
     render_section_header(
         "Требует внимания",
-        eyebrow="КЛИНИЧЕСКИЕ СИГНАЛЫ",
         description=(
             "Детерминированные правила выделяют факты для проверки, "
             "но не заменяют решение врача."

@@ -103,7 +103,6 @@ def render_metrics(dashboard: DashboardResponse) -> None:
     }
     render_section_header(
         "Динамика показателей",
-        eyebrow="ВРЕМЕННЫЕ РЯДЫ",
         description=(
             "Выберите клиническую область. Для плотных дневников "
             "по умолчанию показаны последние 90 дней."

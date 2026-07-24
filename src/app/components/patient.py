@@ -28,7 +28,6 @@ def render_patient_card(dashboard: DashboardResponse) -> None:
     patient = dashboard.patient
     render_section_header(
         "Пациент",
-        eyebrow="ОБЗОР",
         description="Ключевые сведения из нормализованной медицинской истории.",
     )
 
@@ -64,7 +63,6 @@ def render_patient_context(dashboard: DashboardResponse) -> None:
 
     render_section_header(
         "Клинический контекст",
-        eyebrow="ИСТОРИЯ",
         description="Аллергии, хронические состояния и актуальные назначения.",
     )
     clinical = st.columns((1, 1.35, 1.65), gap="medium")
