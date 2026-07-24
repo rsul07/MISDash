@@ -31,10 +31,12 @@ Streamlit; прямоугольники не обозначают отдельн
 
 Основной поток интерфейса выполняется в памяти:
 
-1. `src/app/data.py` временно сохраняет байты загруженного JSON.
-2. `MISParser.parse_record()` возвращает `PatientRecord`.
-3. `DashboardService.build(record)` возвращает `DashboardResponse`.
-4. Компоненты Streamlit читают только поля `DashboardResponse`.
+1. `src/app/source.py` получает байты загруженного JSON или вызывает
+   `src/generator` для синтетической выгрузки.
+2. `src/app/data.py` временно сохраняет выбранные JSON-байты.
+3. `MISParser.parse_record()` возвращает `PatientRecord`.
+4. `DashboardService.build(record)` возвращает `DashboardResponse`.
+5. Компоненты Streamlit читают только поля `DashboardResponse`.
 
 `patient_record.json` — опциональный артефакт, а не обязательная промежуточная
 база. Его создаёт `MISParser.parse()`, а
@@ -51,12 +53,27 @@ Streamlit; прямоугольники не обозначают отдельн
 
 | Слой | Вход | Выход | Что ему разрешено знать |
 | --- | --- | --- | --- |
+| `src/generator` | `GenerationConfig` | синтетический грязный JSON | шаблоны тестовой персоны и намеренные искажения |
 | `src/parser` | грязный JSON МИС | `PatientRecord 1.0` | aliases, пропуски, форматы дат и структура конкретной выгрузки |
+| `src/quality` | сгенерированный JSON и `PatientRecord` | именованный QA-отчёт | ожидаемая семантика generator и публичный контракт parser; только developer flow |
 | `src/storage` | `PatientRecord` или JSON канонической записи | валидированный `PatientRecord` | только канонический контракт и файловая система |
 | `src/backend` | `PatientRecord` | `DashboardResponse 1.1` | правила актуальности, frontend-проекции и связь входов калькуляторов |
 | `src/calculators` | нормализованные числа | рассчитанные значения | чистые формулы и их ограничения |
 | `src/summarizer` | ограниченные факты из двух контрактов | `ClinicalSummary` | текстовый контекст, prompt и structured output |
-| `src/app` | два валидированных контракта | интерфейс | отображение, загрузка и состояние сессии |
+| `src/app` | JSON-байты и два валидированных контракта | интерфейс | выбор источника, отображение и состояние сессии |
+
+## Сырой формат generator
+
+Выход `src/generator` намеренно содержит неоднородные и служебные поля. Это
+тестовый вход для tolerant reader, а не четвёртый публичный контракт MIS Dash.
+Frontend не обращается к этим ключам, а изменения грязных форм локализуются в
+parser и его тестах.
+
+Конфигурация `seed=42`, `years=9`, `light=False` побайтово воспроизводит
+`data/patient_etalon.json`. Другие параметры меняют объём истории и вариации
+представления, но в текущей версии всё ещё описывают одну фиксированную
+синтетическую персону. Подробности API и ограничений:
+[синтетический generator](generator.md).
 
 ## `PatientRecord 1.0`
 

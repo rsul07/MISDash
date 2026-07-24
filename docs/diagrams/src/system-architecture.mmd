@@ -1,12 +1,21 @@
 flowchart LR
     doctor["Врач"]
-    mis["JSON-выгрузка МИС"]
+    mis["Готовая JSON-выгрузка МИС"]
     gemini["Gemini API"]
 
     subgraph system["MIS Dash · одно Python/Streamlit-приложение"]
         direction TB
 
-        upload["src/app<br/><b>Загрузка и состояние сессии</b>"]
+        subgraph sources["Источники данных"]
+            direction LR
+            source["src/app/source.py<br/><b>Выбор источника</b><br/><small>загрузка или форма generator</small>"]
+            generator["src/generator<br/><b>Синтетическая выгрузка</b><br/><small>seed · years · light</small>"]
+            raw["<b>Байты грязного JSON</b><br/><small>единая parser boundary</small>"]
+
+            source -->|"загруженный файл"| raw
+            source -->|"GenerationConfig"| generator
+            generator -->|"UTF-8 JSON"| raw
+        end
 
         subgraph deterministic["Детерминированный контур"]
             direction LR
@@ -36,7 +45,7 @@ flowchart LR
 
         views["src/app<br/><b>Экраны Streamlit</b><br/><small>профиль · динамика · приёмы · ИИ-сводка</small>"]
 
-        upload --> parser
+        raw --> parser
         record -. "parse(): save" .-> storage
         storage -. "build_from_path(): load" .-> backend
         backend --> selection
@@ -47,8 +56,8 @@ flowchart LR
         summary_ui --> views
     end
 
-    mis -->|"формирует выгрузку"| doctor
-    doctor -->|"загружает JSON"| upload
+    doctor -->|"выбирает источник и параметры"| source
+    mis -->|"загрузка"| source
     summary -->|"HTTPS · prompt + JSON Schema"| gemini
     gemini -->|"JSON"| summary
 
@@ -56,13 +65,16 @@ flowchart LR
     classDef module fill:#e0f2fe,stroke:#0284c7,color:#0f172a,stroke-width:2px;
     classDef contract fill:#f3e8ff,stroke:#9333ea,color:#3b0764,stroke-width:2px;
     classDef ai fill:#ecfdf5,stroke:#059669,color:#064e3b,stroke-width:2px;
+    classDef data fill:#fff7ed,stroke:#f59e0b,color:#7c2d12,stroke-width:2px;
     classDef external fill:#e2e8f0,stroke:#64748b,color:#0f172a,stroke-width:2px;
     class doctor person;
-    class upload,views,summary_ui,parser,backend,selection,calculators module;
+    class source,generator,views,summary_ui,parser,backend,selection,calculators module;
+    class raw data;
     class record,response,storage,clinical contract;
     class summary ai;
     class mis,gemini external;
     style deterministic fill:#f8fafc,stroke:#94a3b8,stroke-width:1px
     style enrichment fill:#f8fafc,stroke:#cbd5e1,stroke-width:1px
     style narrative fill:#f0fdf4,stroke:#86efac,stroke-width:1px
+    style sources fill:#fffaf0,stroke:#fdba74,stroke-width:1px
     style system fill:#ffffff,stroke:#334155,stroke-width:3px
