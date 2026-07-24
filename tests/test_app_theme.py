@@ -31,3 +31,18 @@ def test_source_status_escapes_filename(monkeypatch) -> None:
     assert "<patient>" not in html
     assert "&lt;patient&gt;.json" in html
     assert "загруженный JSON" in html
+
+
+def test_sidebar_action_buttons_have_readable_resting_state(monkeypatch) -> None:
+    streamlit = MagicMock()
+    monkeypatch.setattr(theme, "st", streamlit)
+
+    theme.apply_app_theme()
+
+    css = streamlit.markdown.call_args.args[0]
+    assert '[data-testid="stFileUploader"] button span' in css
+    assert '[data-testid="stFileUploader"] button p' in css
+    assert "color: var(--mis-navy) !important;" in css
+    assert '[data-testid="stDownloadButton"] button {' in css
+    assert "background: var(--mis-action);" in css
+    assert '[data-testid="stDownloadButton"] button p' in css

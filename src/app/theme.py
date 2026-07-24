@@ -216,12 +216,57 @@ html, body, [class*="css"] {{
 }}
 
 [data-testid="stSidebar"] [data-testid="stFileUploader"] button {{
-  color: var(--mis-navy);
+  background: #ffffff;
+  border-color: var(--mis-border);
+}}
+
+[data-testid="stSidebar"] [data-testid="stFileUploader"] button,
+[data-testid="stSidebar"] [data-testid="stFileUploader"] button p,
+[data-testid="stSidebar"] [data-testid="stFileUploader"] button span,
+[data-testid="stSidebar"] [data-testid="stFileUploader"] button svg {{
+  color: var(--mis-navy) !important;
+}}
+
+[data-testid="stSidebar"] [data-testid="stFileUploader"] button:hover {{
+  background: #e8f4f2;
+  border-color: var(--mis-teal);
+}}
+
+[data-testid="stSidebar"] [data-testid="stFileUploader"] button:hover,
+[data-testid="stSidebar"] [data-testid="stFileUploader"] button:hover p,
+[data-testid="stSidebar"] [data-testid="stFileUploader"] button:hover span,
+[data-testid="stSidebar"] [data-testid="stFileUploader"] button:hover svg {{
+  color: var(--mis-action) !important;
+}}
+
+[data-testid="stSidebar"] [data-testid="stDownloadButton"] button {{
+  background: var(--mis-action);
+  border-color: var(--mis-action);
+}}
+
+[data-testid="stSidebar"] [data-testid="stDownloadButton"] button,
+[data-testid="stSidebar"] [data-testid="stDownloadButton"] button p,
+[data-testid="stSidebar"] [data-testid="stDownloadButton"] button span,
+[data-testid="stSidebar"] [data-testid="stDownloadButton"] button svg {{
+  color: #ffffff !important;
+}}
+
+[data-testid="stSidebar"] [data-testid="stDownloadButton"] button:hover {{
+  background: var(--mis-teal);
+  border-color: var(--mis-teal);
+}}
+
+[data-testid="stSidebar"] [data-testid="stDownloadButton"] button:disabled {{
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+  opacity: 0.65;
 }}
 
 [data-testid="stSidebar"] [data-testid="stBaseButton-primary"],
-[data-testid="stSidebar"] [data-testid="stDownloadButton"] button {{
-  color: #ffffff;
+[data-testid="stSidebar"] [data-testid="stBaseButton-primary"] p,
+[data-testid="stSidebar"] [data-testid="stBaseButton-primary"] span,
+[data-testid="stSidebar"] [data-testid="stBaseButton-primary"] svg {{
+  color: #ffffff !important;
 }}
 
 .mis-sidebar-brand {{
