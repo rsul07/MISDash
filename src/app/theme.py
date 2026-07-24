@@ -715,9 +715,8 @@ html, body, [class*="css"] {{
   border-top: 0.22rem solid var(--mis-teal);
 }}
 
-[data-testid="stVerticalBlockBorderWrapper"]:has(.mis-patient-marker)
-  [data-testid="stHorizontalBlock"] {{
-  align-items: center;
+[data-testid="stHorizontalBlock"]:has(.mis-patient-marker) {{
+  align-items: center !important;
 }}
 
 [data-testid="stVerticalBlockBorderWrapper"]:has(.mis-flag-critical) {{

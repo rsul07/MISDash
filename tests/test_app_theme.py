@@ -88,9 +88,9 @@ def test_patient_card_centers_columns_and_stat_values(monkeypatch) -> None:
 
     css = streamlit.markdown.call_args.args[0]
     assert ":has(.mis-patient-marker)" in css
-    assert '[data-testid="stHorizontalBlock"]' in css
+    assert '[data-testid="stHorizontalBlock"]:has(.mis-patient-marker)' in css
     assert "grid-template-rows: minmax(1.4rem, auto) 1fr;" in css
-    assert "align-items: center;" in css
+    assert "align-items: center !important;" in css
 
 
 def test_red_flag_cards_prioritize_title_and_explanation(monkeypatch) -> None:
