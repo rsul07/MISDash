@@ -1087,10 +1087,15 @@ html, body, [class*="css"] {{
     font-size: 1rem;
   }}
 
+  [data-testid="stLayoutWrapper"]:has(.mis-latest-value) {{
+    margin-bottom: 1em;
+  }}
+
   [data-testid="stHorizontalBlock"]:has(.mis-latest-value) {{
     display: grid !important;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.55rem !important;
+    row-gap: 2rem;
+    column-gap: 0.55rem;
   }}
 
   [data-testid="stHorizontalBlock"]:has(.mis-latest-value)
