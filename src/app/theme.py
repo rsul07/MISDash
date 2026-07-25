@@ -126,6 +126,8 @@ html, body, [class*="css"] {{
 [data-testid="stHeader"] {{
   background: rgba(243, 248, 251, 0.88);
   backdrop-filter: blur(0.75rem);
+  height: 3em;
+  min-height: 3em;
 }}
 
 [data-testid="stHeaderActionElements"] {{
