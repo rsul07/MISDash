@@ -8,10 +8,10 @@ flowchart TB
 
     contract["PatientRecord 1.0<br/><small>strict Pydantic contract</small>"]
     storage_module["src/storage/patient_records.py<br/><small>валидация и атомарная запись</small>"]
-    storage[(patient_record.json<br/>опционально)]
+    storage[(patient_record.json)]
 
     raw --> engine --> builder --> contract
-    builder -. "вызывает" .-> adapters
+    builder -.-> adapters
     support -. "правила чтения и нормализации" .-> adapters
     contract -. "parse(): save" .-> storage_module --> storage
 
