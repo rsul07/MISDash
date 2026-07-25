@@ -68,6 +68,7 @@ def test_summary_is_generated_once_and_survives_rerun(
 ) -> None:
     streamlit = _streamlit(True, False)
     monkeypatch.setattr(component, "st", streamlit)
+    monkeypatch.setattr(component, "render_section_header", MagicMock())
     service = FakeService()
     settings = SummarySettings(api_key="test-key", model="gemini-test")
     record = _record()
@@ -94,6 +95,7 @@ def test_summary_is_generated_once_and_survives_rerun(
     )
     assert second.ai_summary == first.ai_summary
     assert streamlit.button.call_args_list[1].args[0] == "Сформировать заново"
+    streamlit.caption.assert_not_called()
 
 
 def test_changing_file_clears_previous_summary(
@@ -101,6 +103,7 @@ def test_changing_file_clears_previous_summary(
 ) -> None:
     streamlit = _streamlit(True, False)
     monkeypatch.setattr(component, "st", streamlit)
+    monkeypatch.setattr(component, "render_section_header", MagicMock())
     service = FakeService()
     settings = SummarySettings(api_key="test-key")
     record = _record()
@@ -122,6 +125,8 @@ def test_missing_key_disables_generation(
 ) -> None:
     streamlit = _streamlit(False)
     monkeypatch.setattr(component, "st", streamlit)
+    section_header = MagicMock()
+    monkeypatch.setattr(component, "render_section_header", section_header)
     record = _record()
 
     result = component.render_summary_controls(
@@ -132,6 +137,7 @@ def test_missing_key_disables_generation(
     )
 
     assert result.ai_summary is None
+    section_header.assert_called_once()
     assert streamlit.button.call_args.kwargs["disabled"] is True
     streamlit.warning.assert_called_once_with(
         "Для генерации сводки добавьте GEMINI_API_KEY в локальный файл .env."

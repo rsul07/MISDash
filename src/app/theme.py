@@ -1,0 +1,1252 @@
+"""Presentation-ready visual system for the Streamlit application."""
+
+from __future__ import annotations
+
+from html import escape
+
+import streamlit as st
+
+
+NAVY = "#0B2D4F"
+INK = "#082A4C"
+BLUE = "#168CCA"
+TEAL = "#10A889"
+ACTION_TEAL = "#087B68"
+AMBER = "#D48817"
+CRITICAL = "#B4233C"
+BACKGROUND = "#F3F8FB"
+SURFACE = "#FFFFFF"
+BORDER = "#D5E3EA"
+MUTED = "#536E84"
+
+
+def apply_app_theme() -> None:
+    """Inject the shared CSS layer once per Streamlit rerun."""
+
+    st.markdown(f"<style>{_APP_CSS}</style>", unsafe_allow_html=True)
+
+
+def render_sidebar_header() -> None:
+    """Render the data-source heading in the dark navigation surface."""
+
+    st.markdown(
+        """
+        <div class="mis-sidebar-title">JSON-файл пациента</div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_source_status(*, filename: str) -> None:
+    """Show a compact processed-file notice in the sidebar."""
+
+    st.markdown(
+        (
+            '<div class="mis-source-status mis-enter">'
+            '<span class="mis-source-dot"></span>'
+            "<div>"
+            "<strong>Файл обработан</strong>"
+            f"<span>{escape(filename)}</span>"
+            "</div>"
+            "</div>"
+        ),
+        unsafe_allow_html=True,
+    )
+
+
+def render_empty_state() -> None:
+    """Explain the first action without filling the main presentation frame."""
+
+    st.markdown(
+        """
+        <section class="mis-empty-state mis-enter">
+          <h1>MIS Dash</h1>
+          <h2>Откройте историю пациента</h2>
+          <p>
+            Загрузите JSON из МИС или создайте воспроизводимую синтетическую
+            выгрузку в панели слева.
+          </p>
+          <div class="mis-empty-steps">
+            <span><b>1</b> Выберите источник</span>
+            <span><b>2</b> Обработайте историю</span>
+            <span><b>3</b> Изучите сигналы и динамику</span>
+          </div>
+        </section>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_section_header(title: str) -> None:
+    """Render consistent hierarchy for dashboard sections."""
+
+    st.markdown(
+        (
+            '<div class="mis-section-heading mis-enter">'
+            f"<h2>{escape(title)}</h2>"
+            "</div>"
+        ),
+        unsafe_allow_html=True,
+    )
+
+
+_APP_CSS = f"""
+:root {{
+  --mis-navy: {NAVY};
+  --mis-ink: {INK};
+  --mis-blue: {BLUE};
+  --mis-teal: {TEAL};
+  --mis-action: {ACTION_TEAL};
+  --mis-amber: {AMBER};
+  --mis-critical: {CRITICAL};
+  --mis-bg: {BACKGROUND};
+  --mis-surface: {SURFACE};
+  --mis-border: {BORDER};
+  --mis-muted: {MUTED};
+  --mis-shadow: 0 0.25rem 1.125rem rgba(8, 42, 76, 0.07);
+}}
+
+html, body, [class*="css"] {{
+  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+}}
+
+[data-testid="stAppViewContainer"] {{
+  background:
+    radial-gradient(circle at 84% -8%, rgba(22, 140, 202, 0.08), transparent 28rem),
+    var(--mis-bg);
+}}
+
+[data-testid="stMainBlockContainer"] {{
+  max-width: 82rem;
+  padding-top: 3.25rem;
+  padding-bottom: 4rem;
+}}
+
+[data-testid="stHeader"] {{
+  background: rgba(243, 248, 251, 0.88);
+  backdrop-filter: blur(0.75rem);
+  height: 3em;
+  min-height: 3em;
+}}
+
+[data-testid="stHeaderActionElements"] {{
+  display: none !important;
+}}
+
+[data-testid="stSidebar"] {{
+  background: var(--mis-navy);
+  border-right: 0;
+}}
+
+[data-testid="stSidebar"] [data-testid="stSidebarContent"] {{
+  padding-top: 1.2rem;
+  overflow-x: hidden !important;
+}}
+
+[data-testid="stSidebar"] h1,
+[data-testid="stSidebar"] h2,
+[data-testid="stSidebar"] h3,
+[data-testid="stSidebar"] p,
+[data-testid="stSidebar"] label,
+[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] {{
+  color: #f6fbff;
+}}
+
+[data-testid="stSidebar"] [data-testid="stCaptionContainer"] {{
+  color: #b9cfdf;
+}}
+
+[data-testid="stSidebar"] [data-baseweb="radio"] {{
+  width: 100%;
+  min-width: 0;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 0.75rem;
+  padding: 0.55rem 0.65rem;
+  margin-bottom: 0.35rem;
+}}
+
+[data-testid="stSidebar"] [data-baseweb="radio"] > div:last-child {{
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}}
+
+[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] {{
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.25);
+}}
+
+[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] small,
+[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] span {{
+  color: #d9e8f1;
+}}
+
+[data-testid="stSidebar"] [data-testid="stFileUploader"] button {{
+  background: #ffffff;
+  border-color: var(--mis-border);
+}}
+
+[data-testid="stSidebar"] [data-testid="stFileUploader"] button,
+[data-testid="stSidebar"] [data-testid="stFileUploader"] button p,
+[data-testid="stSidebar"] [data-testid="stFileUploader"] button span,
+[data-testid="stSidebar"] [data-testid="stFileUploader"] button svg {{
+  color: var(--mis-navy) !important;
+}}
+
+[data-testid="stSidebar"] [data-testid="stFileUploader"] button:hover {{
+  background: #e8f4f2;
+  border-color: var(--mis-teal);
+}}
+
+[data-testid="stSidebar"] [data-testid="stFileUploader"] button:hover,
+[data-testid="stSidebar"] [data-testid="stFileUploader"] button:hover p,
+[data-testid="stSidebar"] [data-testid="stFileUploader"] button:hover span,
+[data-testid="stSidebar"] [data-testid="stFileUploader"] button:hover svg {{
+  color: var(--mis-action) !important;
+}}
+
+[data-testid="stSidebar"] [data-testid="stDownloadButton"] button {{
+  background: var(--mis-action);
+  border-color: var(--mis-action);
+}}
+
+[data-testid="stSidebar"] [data-testid="stDownloadButton"] button,
+[data-testid="stSidebar"] [data-testid="stDownloadButton"] button p,
+[data-testid="stSidebar"] [data-testid="stDownloadButton"] button span,
+[data-testid="stSidebar"] [data-testid="stDownloadButton"] button svg {{
+  color: #ffffff !important;
+}}
+
+[data-testid="stSidebar"] [data-testid="stDownloadButton"] button:hover {{
+  background: var(--mis-teal);
+  border-color: var(--mis-teal);
+}}
+
+[data-testid="stSidebar"] [data-testid="stDownloadButton"] button:disabled {{
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+  opacity: 0.65;
+}}
+
+[data-testid="stSidebar"] [data-testid="stBaseButton-primary"],
+[data-testid="stSidebar"] [data-testid="stBaseButton-primary"] p,
+[data-testid="stSidebar"] [data-testid="stBaseButton-primary"] span,
+[data-testid="stSidebar"] [data-testid="stBaseButton-primary"] svg {{
+  color: #ffffff !important;
+}}
+
+[data-testid="stSidebar"] [data-testid="stNumberInputStepDown"],
+[data-testid="stSidebar"] [data-testid="stNumberInputStepUp"],
+[data-testid="stSidebar"] [data-testid="InputInstructions"] {{
+  display: none !important;
+}}
+
+[data-testid="stSidebar"] [data-testid="stButton"] button {{
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.22);
+}}
+
+[data-testid="stSidebar"] [data-testid="stButton"] button,
+[data-testid="stSidebar"] [data-testid="stButton"] button p,
+[data-testid="stSidebar"] [data-testid="stButton"] button span {{
+  color: #ffffff !important;
+}}
+
+[data-testid="stSidebar"] [data-testid="stButton"] button:hover {{
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.35);
+}}
+
+.mis-sidebar-title {{
+  margin: 0.25rem 0 1.75rem;
+  color: white;
+  font-size: 1.05rem;
+  font-weight: 750;
+  letter-spacing: -0.01em;
+}}
+
+.mis-empty-state h1 {{
+  color: var(--mis-ink);
+  font-size: clamp(2rem, 4vw, 3.15rem);
+  line-height: 1;
+  letter-spacing: -0.04em;
+  margin: 0 0 1.2rem;
+}}
+
+.mis-source-status {{
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  margin: 1rem 0 0.25rem;
+  padding: 0.7rem 0.75rem;
+  border: 1px solid rgba(16, 168, 137, 0.25);
+  border-radius: 0.8rem;
+  background: rgba(16, 168, 137, 0.08);
+}}
+
+.mis-source-status strong,
+.mis-source-status span {{
+  display: block;
+}}
+
+.mis-source-status strong {{
+  color: #ffffff;
+  font-size: 0.78rem;
+}}
+
+.mis-source-status div > span {{
+  max-width: 12rem;
+  margin-top: 0.15rem;
+  overflow-wrap: anywhere;
+  color: #b9cfdf;
+  font-size: 0.69rem;
+}}
+
+.mis-source-dot {{
+  flex: 0 0 auto;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-top: 0.3rem;
+  border-radius: 50%;
+  background: var(--mis-teal);
+  box-shadow: 0 0 0 0.25rem rgba(16, 168, 137, 0.12);
+}}
+
+.mis-empty-state {{
+  max-width: 48rem;
+  margin: 5rem auto 0;
+  padding: 3.5rem;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid var(--mis-border);
+  border-radius: 1.25rem;
+  box-shadow: var(--mis-shadow);
+}}
+
+.mis-empty-state h2 {{
+  color: var(--mis-ink);
+  font-size: 1.65rem;
+  margin: 0 0 0.65rem;
+}}
+
+.mis-empty-state > p {{
+  color: var(--mis-muted);
+  max-width: 38rem;
+  margin: 0 auto;
+}}
+
+.mis-empty-steps {{
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.6rem;
+}}
+
+.mis-empty-steps span {{
+  padding: 0.55rem 0.8rem;
+  border-radius: 999px;
+  background: #eef5f8;
+  color: var(--mis-muted);
+  font-size: 0.78rem;
+}}
+
+.mis-empty-steps b {{
+  color: var(--mis-action);
+  margin-right: 0.2rem;
+}}
+
+.mis-section-heading {{
+  margin: 1.25rem 0 1rem;
+}}
+
+.mis-section-heading h2 {{
+  color: var(--mis-ink);
+  font-size: clamp(1.55rem, 2.3vw, 2rem);
+  letter-spacing: -0.025em;
+  margin: 0.2rem 0 0.2rem;
+}}
+
+.mis-patient-heading {{
+  padding: 0.45rem 0.6rem 0.45rem 0;
+}}
+
+.mis-patient-heading h2 {{
+  color: var(--mis-ink);
+  font-size: clamp(1.25rem, 2vw, 1.7rem);
+  letter-spacing: -0.035em;
+  line-height: 1.15;
+  margin: 0.2rem 0 0;
+}}
+
+.mis-patient-id {{
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.55rem;
+  padding: 0.2rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(16, 168, 137, 0.08);
+  color: var(--mis-action);
+  font-family: ui-monospace, "Cascadia Code", monospace;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}}
+
+.mis-patient-stat {{
+  display: grid;
+  grid-template-rows: minmax(1.4rem, auto) 1fr;
+  box-sizing: border-box;
+  min-height: 6.35rem;
+  padding: 0.72rem 0.75rem;
+  border-radius: 0.8rem;
+  background: #f7fafc;
+  border: 1px solid #e2edf2;
+}}
+
+.mis-patient-stat span,
+.mis-patient-stat strong {{
+  display: block;
+}}
+
+.mis-patient-stat span {{
+  color: var(--mis-muted);
+  font-size: 0.7rem;
+  line-height: 1.2;
+}}
+
+.mis-patient-stat strong {{
+  display: flex;
+  align-items: center;
+  min-height: 0;
+  color: var(--mis-ink);
+  font-size: clamp(1.05rem, 1.7vw, 1.45rem);
+  line-height: 1.15;
+  padding-top: 0.3rem;
+  overflow-wrap: anywhere;
+}}
+
+.mis-clinical-panel {{
+  min-height: 13rem;
+  max-height: 19rem;
+  margin-top: 1rem;
+  padding: 0.95rem;
+  overflow: hidden;
+  border: 1px solid #e1ebf0;
+  border-radius: 0.85rem;
+  background: #f8fbfc;
+}}
+
+.mis-clinical-title {{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid #e1ebf0;
+}}
+
+.mis-clinical-title h3 {{
+  color: var(--mis-ink);
+  font-size: 0.88rem;
+  margin: 0;
+}}
+
+.mis-clinical-title > span {{
+  min-width: 1.65rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: #e8f4f2;
+  color: var(--mis-action);
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-align: center;
+}}
+
+.mis-clinical-list {{
+  max-height: 15rem;
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #bfd3de transparent;
+}}
+
+.mis-clinical-item {{
+  padding: 0.62rem 0.05rem;
+  border-bottom: 1px solid #e8f0f4;
+}}
+
+.mis-clinical-item:last-child {{
+  border-bottom: 0;
+}}
+
+.mis-clinical-item strong,
+.mis-clinical-item span {{
+  display: block;
+}}
+
+.mis-clinical-item strong {{
+  color: var(--mis-ink);
+  font-size: 0.78rem;
+  font-weight: 690;
+  line-height: 1.35;
+}}
+
+.mis-clinical-item span {{
+  color: var(--mis-muted);
+  font-size: 0.7rem;
+  line-height: 1.35;
+  margin-top: 0.2rem;
+}}
+
+.mis-allergy-item {{
+  margin: 0.55rem 0;
+  padding: 0.58rem 0.65rem;
+  border: 1px solid rgba(212, 136, 23, 0.22);
+  border-radius: 0.65rem;
+  background: rgba(212, 136, 23, 0.07);
+}}
+
+.mis-empty-copy {{
+  color: var(--mis-muted);
+  font-size: 0.75rem;
+  padding: 0.8rem 0;
+}}
+
+.mis-flag-card {{
+  min-height: 6.8rem;
+  padding: 0.2rem 0.1rem 0.25rem 0.35rem;
+}}
+
+.mis-flag-heading {{
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}}
+
+.mis-flag-heading b {{
+  flex: 0 0 auto;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.65rem;
+}}
+
+.mis-flag-heading h3 {{
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--mis-ink);
+  font-size: 1.08rem;
+  font-weight: 720;
+  line-height: 1.32;
+  margin: 0;
+}}
+
+.mis-flag-card p {{
+  max-width: 72ch;
+  color: #36536a;
+  font-size: 0.9rem;
+  font-weight: 450;
+  line-height: 1.55;
+  margin: 0.75rem 0 0;
+}}
+
+.mis-flag-critical .mis-flag-heading b {{
+  color: var(--mis-critical);
+  background: rgba(180, 35, 60, 0.1);
+}}
+
+.mis-flag-warning .mis-flag-heading b {{
+  color: #9a5e08;
+  background: rgba(212, 136, 23, 0.12);
+}}
+
+.mis-flag-info .mis-flag-heading b {{
+  color: #096d9e;
+  background: rgba(22, 140, 202, 0.1);
+}}
+
+.mis-no-signals {{
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid rgba(16, 168, 137, 0.2);
+  border-radius: 0.9rem;
+  background: rgba(16, 168, 137, 0.06);
+}}
+
+.mis-no-signals > span {{
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--mis-teal);
+  color: white;
+  font-weight: 800;
+}}
+
+.mis-no-signals strong {{
+  color: var(--mis-ink);
+  font-size: 0.85rem;
+}}
+
+.mis-no-signals p {{
+  color: var(--mis-muted);
+  font-size: 0.75rem;
+  margin: 0.1rem 0 0;
+}}
+
+.mis-summary-empty {{
+  padding: 1.2rem;
+  border: 1px dashed #bfd3de;
+  border-radius: 0.9rem;
+  background: rgba(255, 255, 255, 0.55);
+  color: var(--mis-muted);
+  font-size: 0.85rem;
+  text-align: center;
+}}
+
+.mis-latest-value {{
+  min-height: 6.3rem;
+  margin-bottom: 0.75rem;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid #deeaef;
+  border-radius: 0.85rem;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 0.18rem 0.75rem rgba(8, 42, 76, 0.04);
+}}
+
+.mis-latest-value--calculated {{
+  border-color: #a9d8cd;
+  background:
+    linear-gradient(135deg, rgba(16, 168, 137, 0.12), rgba(255, 255, 255, 0.9));
+  box-shadow:
+    inset 0.2rem 0 0 var(--mis-teal),
+    0 0.22rem 0.85rem rgba(16, 120, 105, 0.08);
+}}
+
+.mis-latest-value > span {{
+  display: block;
+  min-height: 2rem;
+  color: var(--mis-muted);
+  font-size: 0.72rem;
+  line-height: 1.3;
+}}
+
+.mis-latest-value > strong {{
+  display: block;
+  color: var(--mis-ink);
+  font-size: 1.25rem;
+  line-height: 1.2;
+  margin: 0.2rem 0 0.45rem;
+}}
+
+.mis-latest-meta {{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}}
+
+.mis-latest-meta small {{
+  color: var(--mis-muted);
+  font-size: 0.67rem;
+}}
+
+.mis-latest-badge {{
+  min-height: auto !important;
+  padding: 0.13rem 0.38rem;
+  border-radius: 999px;
+  background: rgba(16, 168, 137, 0.1);
+  color: var(--mis-action) !important;
+  font-size: 0.61rem !important;
+  font-weight: 750;
+}}
+
+.mis-chart-legend {{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.8rem;
+  margin: 0.65rem 0 0.45rem;
+}}
+
+.mis-chart-legend-item {{
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+  min-width: 0;
+  color: var(--mis-muted);
+  font-size: 0.7rem;
+  line-height: 1.3;
+}}
+
+.mis-chart-legend-marker {{
+  position: relative;
+  flex: 0 0 auto;
+  width: 1.35rem;
+  height: 0.16rem;
+  border-radius: 999px;
+  background: var(--series-color);
+}}
+
+.mis-chart-legend-marker::after {{
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0.38rem;
+  height: 0.38rem;
+  border: 1px solid #fff;
+  border-radius: 50%;
+  background: var(--series-color);
+  content: "";
+  transform: translate(-50%, -50%);
+}}
+
+.mis-chart-legend-item--calculated .mis-chart-legend-marker {{
+  height: 0.24rem;
+}}
+
+.mis-chart-legend-marker--diamond::after {{
+  border-radius: 0.08rem;
+  transform: translate(-50%, -50%) rotate(45deg);
+}}
+
+.mis-chart-legend-badge {{
+  padding: 0.1rem 0.3rem;
+  border-radius: 999px;
+  background: rgba(16, 168, 137, 0.1);
+  color: var(--mis-action);
+  font-size: 0.56rem;
+  font-weight: 750;
+}}
+
+.mis-visit-table-shell {{
+  max-height: 32rem;
+  overflow: auto;
+  border: 1px solid var(--mis-border);
+  border-radius: 0.95rem;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 0.22rem 0.9rem rgba(8, 42, 76, 0.05);
+}}
+
+.mis-visit-table {{
+  width: 100%;
+  min-width: 54rem;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+  color: var(--mis-ink);
+  font-size: 0.78rem;
+}}
+
+.mis-visit-table th {{
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 0.72rem 0.8rem;
+  border-bottom: 1px solid #cbdde5;
+  background: #edf5f7;
+  color: var(--mis-muted);
+  font-size: 0.67rem;
+  font-weight: 750;
+  letter-spacing: 0.045em;
+  text-align: left;
+  text-transform: uppercase;
+}}
+
+.mis-visit-table th:nth-child(1) {{ width: 12%; }}
+.mis-visit-table th:nth-child(2) {{ width: 20%; }}
+.mis-visit-table th:nth-child(3) {{ width: 38%; }}
+.mis-visit-table th:nth-child(4) {{ width: 30%; }}
+
+.mis-visit-table td {{
+  padding: 0.85rem 0.8rem;
+  border-bottom: 1px solid #e5eef2;
+  vertical-align: top;
+}}
+
+.mis-visit-table tbody tr {{
+  transition: background-color 160ms ease;
+}}
+
+.mis-visit-table tbody tr:hover {{
+  background: rgba(28, 143, 205, 0.045);
+}}
+
+.mis-visit-table tbody tr:last-child td {{
+  border-bottom: 0;
+}}
+
+.mis-visit-date,
+.mis-visit-practitioner,
+.mis-visit-diagnoses {{
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}}
+
+.mis-visit-date strong,
+.mis-visit-practitioner strong,
+.mis-visit-diagnoses strong {{
+  line-height: 1.35;
+}}
+
+.mis-visit-date small,
+.mis-visit-practitioner span {{
+  color: var(--mis-muted);
+  font-size: 0.69rem;
+}}
+
+.mis-visit-primary-label {{
+  width: fit-content;
+  padding: 0.12rem 0.38rem;
+  border-radius: 999px;
+  background: rgba(28, 143, 205, 0.1);
+  color: var(--mis-blue);
+  font-size: 0.58rem;
+  font-weight: 750;
+  letter-spacing: 0.025em;
+}}
+
+.mis-visit-diagnosis-list {{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.28rem;
+  margin-top: 0.15rem;
+}}
+
+.mis-visit-diagnosis-chip {{
+  padding: 0.15rem 0.38rem;
+  border: 1px solid #cfe2e8;
+  border-radius: 999px;
+  background: #f3f8fa;
+  color: #36536a;
+  font-family: ui-monospace, "Cascadia Code", monospace;
+  font-size: 0.62rem;
+  font-weight: 700;
+}}
+
+.mis-visit-diagnosis-more {{
+  border-color: #b9ded5;
+  background: rgba(16, 168, 137, 0.08);
+  color: var(--mis-action);
+}}
+
+.mis-visit-complaints {{
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  color: #36536a;
+  line-height: 1.5;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}}
+
+.mis-visit-missing {{
+  color: var(--mis-muted);
+  font-style: italic;
+}}
+
+.mis-visit-table-empty {{
+  padding: 2rem !important;
+  color: var(--mis-muted);
+  text-align: center;
+}}
+
+[data-testid="stSegmentedControl"] {{
+  margin: 0.4rem 0 1.15rem;
+}}
+
+[data-testid="stSegmentedControl"] > div {{
+  padding: 0.25rem;
+  border: 1px solid var(--mis-border);
+  border-radius: 0.85rem;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: 0 0.18rem 0.8rem rgba(8, 42, 76, 0.04);
+}}
+
+[data-testid="stSegmentedControl"] button {{
+  border-radius: 0.65rem;
+  transition: background-color 180ms ease, color 180ms ease, transform 180ms ease;
+}}
+
+[data-testid="stSegmentedControl"] button:hover {{
+  transform: translateY(-1px);
+}}
+
+[data-testid="stTabs"] [data-baseweb="tab-list"] {{
+  gap: 0.35rem;
+  padding: 0.2rem;
+  border-bottom: 0;
+}}
+
+[data-testid="stTabs"] [data-baseweb="tab"] {{
+  height: 2.35rem;
+  padding: 0 0.85rem;
+  border-radius: 0.7rem;
+  color: var(--mis-muted);
+  font-size: 0.78rem;
+  transition: background-color 180ms ease, color 180ms ease;
+}}
+
+[data-testid="stTabs"] [aria-selected="true"] {{
+  background: #e5f2f1;
+  color: var(--mis-action);
+}}
+
+[data-testid="stTabs"] [data-baseweb="tab-highlight"] {{
+  display: none;
+}}
+
+[data-testid="stVerticalBlockBorderWrapper"] {{
+  border-color: var(--mis-border);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 0.2rem 0.9rem rgba(8, 42, 76, 0.045);
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}}
+
+[data-testid="stVerticalBlockBorderWrapper"]:hover {{
+  border-color: #bfd3de;
+  box-shadow: var(--mis-shadow);
+}}
+
+[data-testid="stVerticalBlockBorderWrapper"]:has(.mis-patient-marker) {{
+  border-top: 0.22rem solid var(--mis-teal);
+}}
+
+[data-testid="stHorizontalBlock"]:has(.mis-patient-marker) {{
+  align-items: center !important;
+}}
+
+[data-testid="stVerticalBlockBorderWrapper"]:has(.mis-flag-critical) {{
+  border-left: 0.22rem solid var(--mis-critical);
+}}
+
+[data-testid="stVerticalBlockBorderWrapper"]:has(.mis-flag-warning) {{
+  border-left: 0.22rem solid var(--mis-amber);
+}}
+
+[data-testid="stVerticalBlockBorderWrapper"]:has(.mis-flag-info) {{
+  border-left: 0.22rem solid var(--mis-blue);
+}}
+
+[data-testid="stVerticalBlockBorderWrapper"]:has(.mis-summary-marker) {{
+  border-top: 0.22rem solid var(--mis-blue);
+}}
+
+[data-testid="stMetric"] {{
+  padding: 0.7rem 0.8rem;
+  border-radius: 0.8rem;
+  background: #f7fafc;
+  border: 1px solid #e2edf2;
+}}
+
+[data-testid="stMetricLabel"] {{
+  color: var(--mis-muted);
+}}
+
+[data-testid="stMetricValue"] {{
+  color: var(--mis-ink);
+  font-weight: 760;
+}}
+
+[data-testid="stPlotlyChart"] {{
+  overflow: hidden;
+  border: 1px solid var(--mis-border);
+  border-radius: 1rem;
+  background: white;
+  box-shadow: var(--mis-shadow);
+}}
+
+[data-testid="stDataFrame"] {{
+  overflow: hidden;
+  border: 1px solid var(--mis-border);
+  border-radius: 1rem;
+  box-shadow: var(--mis-shadow);
+}}
+
+[data-testid="stExpander"] {{
+  border-color: var(--mis-border);
+  border-radius: 0.8rem;
+  background: rgba(255, 255, 255, 0.72);
+}}
+
+.mis-enter {{
+  animation: mis-fade-up 300ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
+}}
+
+@keyframes mis-fade-up {{
+  from {{ opacity: 0; transform: translateY(0.4rem); }}
+  to {{ opacity: 1; transform: translateY(0); }}
+}}
+
+@media (max-width: 720px) {{
+  [data-testid="stMainBlockContainer"] {{
+    padding: 2.5rem 0.75rem 2.5rem;
+  }}
+
+  [data-testid="stSidebar"] [data-testid="stSidebarContent"] {{
+    padding-top: 0.75rem;
+  }}
+
+  [data-testid="stSidebar"] button,
+  [data-testid="stSidebar"] input,
+  [data-testid="stSegmentedControl"] button,
+  [data-testid="stTabs"] [role="tab"] {{
+    min-height: 2.75rem;
+  }}
+
+  [data-testid="stSidebar"] input,
+  [data-testid="stTextInput"] input {{
+    font-size: 1rem;
+  }}
+
+  [data-testid="stSegmentedControl"] [role="radiogroup"],
+  [data-testid="stSegmentedControl"] [data-baseweb="button-group"] {{
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    gap: 0.25rem;
+  }}
+
+  [data-testid="stSegmentedControl"] button {{
+    width: 100%;
+    padding: 0.4rem 0.5rem;
+  }}
+
+  [data-testid="stTabs"] [data-baseweb="tab-list"] {{
+    overflow-x: auto;
+    scrollbar-width: thin;
+    scroll-snap-type: x proximity;
+  }}
+
+  [data-testid="stTabs"] [data-baseweb="tab"] {{
+    flex: 0 0 auto;
+    min-height: 2.75rem;
+    scroll-snap-align: start;
+  }}
+
+  [data-testid="stHorizontalBlock"]:has(.mis-patient-marker) {{
+    display: grid !important;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 1.5rem !important;
+  }}
+
+  [data-testid="stLayoutWrapper"]:has(.mis-patient-marker)
+    > div {{
+    padding: 0 0.5rem 1rem 0.5rem !important;
+  }}
+
+  [data-testid="stHorizontalBlock"]:has(.mis-patient-marker)
+    > [data-testid="stColumn"]:first-child {{
+    grid-column: 1 / -1;
+  }}
+
+  [data-testid="stHorizontalBlock"]:has(.mis-patient-marker)
+    > [data-testid="stColumn"]:nth-child(2),
+  [data-testid="stHorizontalBlock"]:has(.mis-patient-marker)
+    > [data-testid="stColumn"]:nth-child(3) {{
+    grid-column: span 3;
+  }}
+
+  [data-testid="stHorizontalBlock"]:has(.mis-patient-marker)
+    > [data-testid="stColumn"]:nth-child(n + 4) {{
+    grid-column: span 2;
+  }}
+
+  [data-testid="stHorizontalBlock"]:has(.mis-patient-marker)
+    > [data-testid="stColumn"] {{
+    width: auto !important;
+    min-width: 0 !important;
+    flex: none !important;
+  }}
+
+  .mis-patient-heading {{
+    padding: 0.25rem 0 0.5rem;
+  }}
+
+  .mis-patient-heading h2 {{
+    font-size: 1.35rem;
+    overflow-wrap: anywhere;
+  }}
+
+  .mis-patient-stat {{
+    min-height: 5.5rem;
+    height: 100%;
+    padding: 0.6rem;
+  }}
+
+  .mis-patient-stat strong {{
+    font-size: 1rem;
+  }}
+
+  [data-testid="stHorizontalBlock"]:has(.mis-latest-value) {{
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.55rem !important;
+  }}
+
+  [data-testid="stHorizontalBlock"]:has(.mis-latest-value)
+    > [data-testid="stColumn"] {{
+    width: auto !important;
+    min-width: 0 !important;
+    flex: none !important;
+  }}
+
+  .mis-latest-value {{
+    min-height: 6rem;
+    margin-bottom: 0;
+    padding: 0.7rem;
+  }}
+
+  .mis-latest-value > strong {{
+    font-size: 1.1rem;
+  }}
+
+  .mis-chart-legend {{
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.45rem;
+    margin-top: 0.75rem;
+  }}
+
+  .mis-chart-legend-item {{
+    font-size: 0.72rem;
+  }}
+
+  .mis-flag-heading {{
+    flex-direction: column-reverse;
+    gap: 0.55rem;
+  }}
+
+  .mis-flag-card {{
+    min-height: auto;
+    padding: 0.1rem;
+  }}
+
+  .mis-flag-heading h3 {{
+    font-size: 1rem;
+  }}
+
+  .mis-flag-card p {{
+    font-size: 0.84rem;
+  }}
+
+  .mis-clinical-panel {{
+    min-height: 0;
+    max-height: none;
+    margin-top: 0.35rem;
+  }}
+
+  [data-testid="stPlotlyChart"] {{
+    border-radius: 0.75rem;
+  }}
+
+  .mis-visit-table-shell {{
+    max-height: none;
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }}
+
+  .mis-visit-table {{
+    min-width: 0;
+    border-collapse: separate;
+  }}
+
+  .mis-visit-table thead {{
+    display: none;
+  }}
+
+  .mis-visit-table,
+  .mis-visit-table tbody,
+  .mis-visit-table tr,
+  .mis-visit-table td {{
+    display: block;
+    width: 100%;
+  }}
+
+  .mis-visit-table tbody {{
+    display: grid;
+    gap: 0.75rem;
+  }}
+
+  .mis-visit-table tbody tr {{
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    padding: 0.75rem;
+    border: 1px solid var(--mis-border);
+    border-radius: 0.85rem;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 0.18rem 0.7rem rgba(8, 42, 76, 0.045);
+  }}
+
+  .mis-visit-table td {{
+    padding: 0.45rem;
+    border: 0;
+  }}
+
+  .mis-visit-table td:nth-child(3),
+  .mis-visit-table td:nth-child(4) {{
+    grid-column: 1 / -1;
+    border-top: 1px solid #e5eef2;
+    margin-top: 0.2rem;
+    padding-top: 0.65rem;
+  }}
+
+  .mis-visit-table td::before {{
+    display: block;
+    margin-bottom: 0.32rem;
+    color: var(--mis-muted);
+    content: attr(data-label);
+    font-size: 0.6rem;
+    font-weight: 750;
+    letter-spacing: 0.045em;
+    text-transform: uppercase;
+  }}
+
+  .mis-visit-complaints {{
+    -webkit-line-clamp: 4;
+  }}
+
+  .mis-empty-state {{
+    margin-top: 1rem;
+    padding: 1.75rem 1rem;
+  }}
+
+  .mis-empty-state h1 {{
+    font-size: 2rem;
+  }}
+
+  .mis-empty-state h2 {{
+    font-size: 1.3rem;
+  }}
+
+  .mis-empty-steps {{
+    align-items: stretch;
+    flex-direction: column;
+  }}
+
+  .mis-section-heading {{
+    margin: 1rem 0 0.75rem;
+  }}
+
+  .mis-section-heading h2 {{
+    font-size: 1.45rem;
+  }}
+}}
+
+@media (prefers-reduced-motion: reduce) {{
+  .mis-enter,
+  [data-testid="stSegmentedControl"] button,
+  [data-testid="stVerticalBlockBorderWrapper"] {{
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }}
+}}
+"""

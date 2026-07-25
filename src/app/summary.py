@@ -6,6 +6,7 @@ from hashlib import sha256
 
 import streamlit as st
 
+from src.app.theme import render_section_header
 from src.contracts.dashboard.v1 import DashboardResponse
 from src.contracts.patient.v1 import PatientRecord
 from src.summarizer import (
@@ -20,10 +21,6 @@ from src.summarizer.prompt import PROMPT_VERSION
 
 _STATE_KEY = "clinical_summary_key"
 _STATE_MARKDOWN = "clinical_summary_markdown"
-_PRIVACY_NOTE = (
-    "Gemini Free Tier используется только с синтетическими данными. "
-    "Не загружайте реальные медицинские данные."
-)
 
 
 def render_summary_controls(
@@ -42,7 +39,7 @@ def render_summary_controls(
         st.session_state[_STATE_KEY] = cache_key
         st.session_state.pop(_STATE_MARKDOWN, None)
 
-    st.caption(_PRIVACY_NOTE)
+    render_section_header("ИИ-сводка")
     if settings.api_key is None and service is None:
         st.warning(
             "Для генерации сводки добавьте GEMINI_API_KEY в локальный файл .env."
@@ -56,6 +53,9 @@ def render_summary_controls(
     should_generate = st.button(
         button_label,
         disabled=settings.api_key is None and service is None,
+        type="primary",
+        icon=":material/auto_awesome:",
+        width="stretch",
     )
     if should_generate:
         try:

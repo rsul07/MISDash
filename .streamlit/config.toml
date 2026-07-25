@@ -1,0 +1,16 @@
+[theme]
+base = "light"
+primaryColor = "#087B68"
+backgroundColor = "#F3F8FB"
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#082A4C"
+font = "sans-serif"
+baseRadius = "large"
+buttonRadius = "large"
+showWidgetBorder = true
+
+[client]
+toolbarMode = "minimal"
+
+[server]
+headless = true

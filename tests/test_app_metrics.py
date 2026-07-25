@@ -23,7 +23,9 @@ def test_metrics_render_only_active_available_group(
 ) -> None:
     streamlit = MagicMock()
     streamlit.tabs.return_value = [_Tab(open=True), _Tab(open=False)]
+    streamlit.columns.return_value = [MagicMock(), MagicMock()]
     monkeypatch.setattr(component, "st", streamlit)
+    monkeypatch.setattr(component, "render_section_header", MagicMock())
     dashboard = _dashboard(
         _series("diastolic", "Диастолическое АД", "mmHg", 80),
         _series("systolic", "Систолическое АД", "mmHg", 120),
@@ -54,13 +56,20 @@ def test_metrics_render_only_active_available_group(
         "metric-chart-blood-pressure-0",
     ]
     assert all(
-        call.kwargs["use_container_width"] is True
+        call.kwargs["width"] == "stretch"
         for call in streamlit.plotly_chart.call_args_list
     )
+    assert all(
+        call.kwargs["theme"] is None
+        for call in streamlit.plotly_chart.call_args_list
+    )
+    assert figures[0].data[0].line.color == component.METRIC_COLORS["systolic"]
+    assert figures[0].layout.paper_bgcolor == "rgba(0,0,0,0)"
+    streamlit.slider.assert_not_called()
     streamlit.info.assert_not_called()
 
 
-def test_dense_series_use_lines_and_default_to_latest_year() -> None:
+def test_dense_series_use_lines_without_repeated_axis_controls() -> None:
     dense = _series(
         "systolic",
         "Систолическое АД",
@@ -76,16 +85,56 @@ def test_dense_series_use_lines_and_default_to_latest_year() -> None:
         point_count=2,
     )
 
-    figure = component._build_figure("mmHg", [dense, sparse])
+    visible_range = component._default_date_range([dense, sparse])
+    figure = component._build_figure("mmHg", [dense, sparse], visible_range)
 
     assert figure.data[0].mode == "lines"
     assert figure.data[1].mode == "lines+markers"
-    assert [
-        button.label for button in figure.layout.xaxis.rangeselector.buttons
-    ] == ["1 год", "3 года", "Всё"]
     visible_range = figure.layout.xaxis.range
     assert visible_range is not None
-    assert visible_range[1] - visible_range[0] == timedelta(days=365)
+    assert visible_range[1] - visible_range[0] == timedelta(days=90)
+    assert figure.layout.title.text is None
+    assert figure.layout.xaxis.title.text is None
+    assert figure.layout.yaxis.title.text is None
+    assert figure.layout.xaxis.rangeselector.buttons == ()
+    assert figure.layout.showlegend is False
+    assert figure.layout.transition.duration == 250
+    assert figure.layout.yaxis.gridcolor == "#E4EDF2"
+
+
+def test_metric_group_uses_one_shared_date_range(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    streamlit = MagicMock()
+    streamlit.tabs.return_value = [_Tab(open=True)]
+    streamlit.columns.return_value = [MagicMock(), MagicMock()]
+    start = datetime(2024, 1, 1)
+    end = datetime(2025, 1, 1)
+    streamlit.slider.return_value = (start, end)
+    monkeypatch.setattr(component, "st", streamlit)
+    monkeypatch.setattr(component, "render_section_header", MagicMock())
+    glucose = _series(
+        "glucose",
+        "Глюкоза крови",
+        "mmol/L",
+        6.5,
+        point_count=367,
+    )
+    hba1c = _series(
+        "hba1c",
+        "Гликированный гемоглобин",
+        "%",
+        7.1,
+        point_count=367,
+    )
+
+    component.render_metrics(_dashboard(glucose, hba1c))
+
+    streamlit.slider.assert_called_once()
+    assert streamlit.slider.call_args.args[0] == "Период отображения"
+    figures = [call.args[0] for call in streamlit.plotly_chart.call_args_list]
+    assert len(figures) == 2
+    assert all(tuple(figure.layout.xaxis.range) == (start, end) for figure in figures)
 
 
 def test_metrics_handle_missing_series_and_empty_points(
@@ -93,6 +142,7 @@ def test_metrics_handle_missing_series_and_empty_points(
 ) -> None:
     streamlit = MagicMock()
     monkeypatch.setattr(component, "st", streamlit)
+    monkeypatch.setattr(component, "render_section_header", MagicMock())
     dashboard = _dashboard(
         MetricSeries(
             code="glucose",
@@ -115,7 +165,9 @@ def test_metrics_render_backend_calculation_explanation(
 ) -> None:
     streamlit = MagicMock()
     streamlit.tabs.return_value = [_Tab(open=True)]
+    streamlit.columns.return_value = [MagicMock()]
     monkeypatch.setattr(component, "st", streamlit)
+    monkeypatch.setattr(component, "render_section_header", MagicMock())
     calculated = _series("pulse-pressure", "Пульсовое давление", "mmHg", 60)
     calculated.calculation = CalculationInfo(
         code="pulse-pressure",
@@ -165,6 +217,72 @@ def test_metric_groups_include_calculated_backend_codes() -> None:
     assert "calculated-ldl-cholesterol" in groups["lipids"]
 
 
+def test_calculated_metrics_are_rendered_first_and_emphasized() -> None:
+    measured = _series("systolic", "Систолическое АД", "mmHg", 120)
+    calculated = _series(
+        "pulse-pressure",
+        "Пульсовое давление",
+        "mmHg",
+        40,
+    )
+    calculated.calculation = CalculationInfo(
+        code="pulse-pressure",
+        description="Разница.",
+        purpose="Контекст.",
+        method="SBP - DBP",
+        standard="ESC",
+    )
+    group = component.METRIC_GROUPS[0]
+
+    ordered = component._series_for_group(
+        group,
+        {
+            measured.code: measured,
+            calculated.code: calculated,
+        },
+    )
+    figure = component._build_figure("mmHg", ordered)
+
+    assert [item.code for item in ordered] == ["pulse-pressure", "systolic"]
+    assert figure.data[0].name == "Пульсовое давление"
+    assert figure.data[0].line.width == 3.6
+    assert figure.data[0].marker.symbol == "diamond"
+    assert figure.data[0].meta == {"calculated": True}
+    assert figure.data[1].line.width == 2.35
+    assert figure.data[1].marker.symbol == "circle"
+    assert figure.data[1].meta == {"calculated": False}
+
+
+def test_chart_legend_is_responsive_and_marks_calculated_series(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    streamlit = MagicMock()
+    monkeypatch.setattr(component, "st", streamlit)
+    calculated = _series(
+        "pulse-pressure",
+        "Пульсовое давление",
+        "mmHg",
+        40,
+    )
+    calculated.calculation = CalculationInfo(
+        code="pulse-pressure",
+        description="Разница.",
+        purpose="Контекст.",
+        method="SBP - DBP",
+        standard="ESC",
+    )
+    measured = _series("systolic", "Систолическое АД", "mmHg", 120)
+
+    figure = component._build_figure("mmHg", [calculated, measured])
+    component._render_chart_legend(figure)
+
+    html = streamlit.markdown.call_args.args[0]
+    assert "mis-chart-legend" in html
+    assert "Пульсовое давление" in html
+    assert "расчётный" in html
+    assert "mis-chart-legend-marker--diamond" in html
+
+
 def test_metric_hover_shows_backend_interpretation() -> None:
     series = _series(
         "egfr-ckd-epi-2021",
@@ -178,6 +296,38 @@ def test_metric_hover_shows_backend_interpretation() -> None:
 
     assert "Категория: %{customdata[1]}" in figure.data[0].hovertemplate
     assert list(figure.data[0].customdata[0]) == ["laboratory", "G3b"]
+
+
+def test_latest_value_tiles_use_last_point_and_calculation_badge(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    streamlit = MagicMock()
+    column = MagicMock()
+    streamlit.columns.return_value = [column]
+    monkeypatch.setattr(component, "st", streamlit)
+    series = _series("pulse-pressure", "Пульсовое давление", "mmHg", 60)
+    series.points.append(
+        MetricPoint(
+            observed_at=date(2025, 1, 2),
+            value=72,
+            source_category="calculated",
+        )
+    )
+    series.calculation = CalculationInfo(
+        code="pulse-pressure",
+        description="Разница.",
+        purpose="Контекст.",
+        method="SBP - DBP",
+        standard="ESC",
+    )
+
+    component._render_latest_values([series])
+
+    html = column.markdown.call_args.args[0]
+    assert "72 mmHg" in html
+    assert "02.01.2025" in html
+    assert "расчётный" in html
+    assert "mis-latest-value--calculated" in html
 
 
 def _dashboard(*metrics: MetricSeries) -> DashboardResponse:

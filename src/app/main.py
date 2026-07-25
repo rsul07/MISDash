@@ -1,4 +1,4 @@
-"""Minimal Streamlit entry point for the patient dashboard."""
+"""Streamlit entry point for the MIS Dash presentation layer."""
 
 from __future__ import annotations
 
@@ -13,24 +13,36 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 if str(REPOSITORY_ROOT) not in sys.path:
     sys.path.insert(0, str(REPOSITORY_ROOT))
 
-from src.app.components import (
-    render_ai_summary,
-    render_metrics,
-    render_patient_card,
-    render_red_flags,
-    render_visits,
-)
+from src.app.dashboard import render_dashboard
 from src.app.data import build_pipeline
 from src.app.source import render_patient_source
-from src.app.summary import render_summary_controls
+from src.app.theme import (
+    apply_app_theme,
+    render_empty_state,
+    render_sidebar_header,
+    render_source_status,
+)
 
 
-st.set_page_config(page_title="MIS Dash")
-st.title("MIS Dash")
+def run_app() -> None:
+    """Configure and render the complete Streamlit application."""
 
-patient_input = render_patient_source()
+    st.set_page_config(
+        page_title="MIS Dash",
+        page_icon="🩺",
+        layout="wide",
+        initial_sidebar_state="auto",
+    )
+    apply_app_theme()
 
-if patient_input is not None:
+    with st.sidebar:
+        render_sidebar_header()
+        patient_input = render_patient_source()
+
+    if patient_input is None:
+        render_empty_state()
+        return
+
     file_bytes = patient_input.file_bytes
     try:
         with st.spinner("Обрабатываем данные пациента…"):
@@ -38,10 +50,10 @@ if patient_input is not None:
     except (ValueError, ValidationError, OSError) as error:
         st.error(f"Не удалось обработать файл: {error}")
     else:
-        st.success("Данные пациента успешно обработаны.")
-        render_patient_card(dashboard)
-        render_metrics(dashboard)
-        render_visits(dashboard)
-        render_red_flags(dashboard)
-        dashboard = render_summary_controls(file_bytes, record, dashboard)
-        render_ai_summary(dashboard)
+        with st.sidebar:
+            render_source_status(filename=patient_input.filename)
+        render_dashboard(file_bytes, record, dashboard)
+
+
+if __name__ == "__main__":
+    run_app()

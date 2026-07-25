@@ -38,6 +38,7 @@
 | [Frontend](frontend.md) | Streamlit, Plotly и состояние сессии | `src/app/` |
 | [Summarizer](summarizer.md) | контекст, prompt, Gemini и валидация | `src/summarizer/`, `src/contracts/summarizer/` |
 | [Диаграммы](diagrams/README.md) | Mermaid-исходники и SVG/PNG | архитектурные изменения |
+| [Скриншоты](screenshots/README.md) | воспроизводимые кадры интерфейса | `src/app/`, презентация и README |
 | [Отчёт](report/README.md) | сборка Typst и приватные шаблоны | `docs/report/sections/` |
 
 ## Состояние функций

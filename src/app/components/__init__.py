@@ -2,7 +2,7 @@
 
 from .insights import render_ai_summary, render_insights, render_red_flags
 from .metrics import render_metrics
-from .patient import render_patient_card
+from .patient import render_patient_card, render_patient_context
 from .visits import render_visits
 
 __all__ = [
@@ -10,6 +10,7 @@ __all__ = [
     "render_insights",
     "render_metrics",
     "render_patient_card",
+    "render_patient_context",
     "render_red_flags",
     "render_visits",
 ]

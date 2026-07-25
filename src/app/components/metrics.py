@@ -4,10 +4,20 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta, timezone
+from html import escape
 
 import plotly.graph_objects as go
 import streamlit as st
 
+from src.app.theme import (
+    AMBER,
+    BLUE,
+    CRITICAL,
+    INK,
+    MUTED,
+    TEAL,
+    render_section_header,
+)
 from src.contracts.dashboard.v1 import CalculationInfo, DashboardResponse, MetricSeries
 
 
@@ -56,11 +66,26 @@ METRIC_GROUPS = (
 
 DENSE_SERIES_POINT_THRESHOLD = 500
 DEFAULT_VISIBLE_DAYS = 365
-RANGE_SELECTOR_BUTTONS = (
-    {"count": 1, "label": "1 год", "step": "year", "stepmode": "backward"},
-    {"count": 3, "label": "3 года", "step": "year", "stepmode": "backward"},
-    {"label": "Всё", "step": "all"},
-)
+DENSE_VISIBLE_DAYS = 90
+METRIC_COLORS = {
+    "systolic": BLUE,
+    "diastolic": TEAL,
+    "pulse-pressure": AMBER,
+    "glucose": BLUE,
+    "hba1c": TEAL,
+    "creatinine": BLUE,
+    "egfr-ckd-epi-2021": TEAL,
+    "urine-albumin-creatinine-ratio": AMBER,
+    "potassium": CRITICAL,
+    "total-cholesterol": BLUE,
+    "non-hdl-cholesterol": TEAL,
+    "ldl-cholesterol": AMBER,
+    "calculated-ldl-cholesterol": "#B26D18",
+    "hdl-cholesterol": "#6677C8",
+    "triglycerides": "#3A9CB8",
+    "body-weight": BLUE,
+    "bmi": TEAL,
+}
 
 
 def render_metrics(dashboard: DashboardResponse) -> None:
@@ -69,7 +94,7 @@ def render_metrics(dashboard: DashboardResponse) -> None:
     metrics_by_code = {
         series.code: series for series in dashboard.metrics if series.points
     }
-    st.header("Динамика показателей")
+    render_section_header("Динамика показателей")
 
     available_groups = [
         (group, group_series)
@@ -90,12 +115,18 @@ def render_metrics(dashboard: DashboardResponse) -> None:
             continue
 
         with tab:
-            for figure_index, figure in enumerate(_build_figures(series)):
+            _render_latest_values(series)
+            visible_range = _render_date_range(group, series)
+            for figure_index, figure in enumerate(
+                _build_figures(series, visible_range)
+            ):
+                _render_chart_legend(figure)
                 st.plotly_chart(
                     figure,
                     key=f"metric-chart-{group.key}-{figure_index}",
-                    use_container_width=True,
+                    width="stretch",
                     config={"displayModeBar": False},
+                    theme=None,
                 )
             _render_calculation_explanations(series)
 
@@ -104,14 +135,18 @@ def _series_for_group(
     group: MetricGroup,
     metrics_by_code: dict[str, MetricSeries],
 ) -> list[MetricSeries]:
-    return [
+    series = [
         metrics_by_code[code]
         for code in group.codes
         if code in metrics_by_code
     ]
+    return sorted(series, key=lambda item: item.calculation is None)
 
 
-def _build_figures(series: list[MetricSeries]) -> list[go.Figure]:
+def _build_figures(
+    series: list[MetricSeries],
+    visible_range: tuple[datetime, datetime] | None = None,
+) -> list[go.Figure]:
     """Build separate figures for incompatible measurement units."""
 
     by_unit: dict[str | None, list[MetricSeries]] = {}
@@ -119,16 +154,22 @@ def _build_figures(series: list[MetricSeries]) -> list[go.Figure]:
         by_unit.setdefault(item.unit, []).append(item)
 
     return [
-        _build_figure(unit, unit_series)
+        _build_figure(unit, unit_series, visible_range)
         for unit, unit_series in by_unit.items()
     ]
 
 
-def _build_figure(unit: str | None, series: list[MetricSeries]) -> go.Figure:
+def _build_figure(
+    unit: str | None,
+    series: list[MetricSeries],
+    visible_range: tuple[datetime, datetime] | None = None,
+) -> go.Figure:
     figure = go.Figure()
     unit_label = unit or ""
 
     for item in series:
+        color = METRIC_COLORS.get(item.code, BLUE)
+        is_calculated = item.calculation is not None
         has_interpretation = any(point.interpretation for point in item.points)
         interpretation_line = (
             "Категория: %{customdata[1]}<br>" if has_interpretation else ""
@@ -140,7 +181,7 @@ def _build_figure(unit: str | None, series: list[MetricSeries]) -> go.Figure:
                 customdata=[
                     [
                         "Расчётный показатель"
-                        if item.calculation is not None
+                        if is_calculated
                         else point.source_category,
                         point.interpretation or "",
                     ]
@@ -152,7 +193,15 @@ def _build_figure(unit: str | None, series: list[MetricSeries]) -> go.Figure:
                     else "lines+markers"
                 ),
                 name=item.display,
-                marker={"size": 5},
+                meta={"calculated": is_calculated},
+                line={"color": color, "width": 3.6 if is_calculated else 2.35},
+                marker={
+                    "size": 7 if is_calculated else 5.5,
+                    "symbol": "diamond" if is_calculated else "circle",
+                    "color": color,
+                    "line": {"color": "#FFFFFF", "width": 0.8},
+                },
+                connectgaps=False,
                 hovertemplate=(
                     "Дата: %{x|%d.%m.%Y %H:%M}<br>"
                     f"Значение: %{{y:.2f}} {unit_label}<br>"
@@ -162,23 +211,135 @@ def _build_figure(unit: str | None, series: list[MetricSeries]) -> go.Figure:
             )
         )
 
-    xaxis: dict[str, object] = {
-        "title": "Дата",
-        "rangeselector": {"buttons": RANGE_SELECTOR_BUTTONS},
-    }
-    default_range = _default_date_range(series)
-    if default_range is not None:
-        xaxis["range"] = default_range
+    xaxis: dict[str, object] = {}
+    if visible_range is not None:
+        xaxis["range"] = visible_range
 
     figure.update_layout(
-        height=360,
+        height=390,
         hovermode="closest",
-        legend_title_text="Показатель",
-        margin={"l": 20, "r": 20, "t": 20, "b": 20},
+        showlegend=False,
+        margin={
+            "l": 46,
+            "r": 18,
+            "t": 18,
+            "b": 28,
+        },
         xaxis=xaxis,
-        yaxis_title=unit or "Значение",
+        yaxis={
+            "gridcolor": "#E4EDF2",
+            "zeroline": False,
+            "tickfont": {"color": MUTED},
+            "fixedrange": False,
+        },
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="#FFFFFF",
+        font={"family": "Inter, Segoe UI, sans-serif", "color": INK},
+        hoverlabel={
+            "bgcolor": INK,
+            "bordercolor": INK,
+            "font": {"color": "#FFFFFF", "size": 12},
+        },
+        transition={"duration": 250, "easing": "cubic-in-out"},
+    )
+    figure.update_xaxes(
+        gridcolor="#EEF3F6",
+        zeroline=False,
+        tickfont={"color": MUTED},
     )
     return figure
+
+
+def _render_chart_legend(figure: go.Figure) -> None:
+    """Render a responsive legend outside Plotly's fixed canvas."""
+
+    items = []
+    for trace in figure.data:
+        meta = trace.meta if isinstance(trace.meta, dict) else {}
+        is_calculated = bool(meta.get("calculated"))
+        calculated_class = " mis-chart-legend-item--calculated" if is_calculated else ""
+        badge = (
+            '<small class="mis-chart-legend-badge">расчётный</small>'
+            if is_calculated
+            else ""
+        )
+        marker_class = " mis-chart-legend-marker--diamond" if is_calculated else ""
+        color = escape(str(trace.line.color))
+        items.append(
+            (
+                f'<div class="mis-chart-legend-item{calculated_class}" '
+                f'style="--series-color:{color}">'
+                f'<i class="mis-chart-legend-marker{marker_class}"></i>'
+                f"<span>{escape(str(trace.name))}</span>{badge}</div>"
+            )
+        )
+    st.markdown(
+        f'<div class="mis-chart-legend">{"".join(items)}</div>',
+        unsafe_allow_html=True,
+    )
+
+
+def _render_date_range(
+    group: MetricGroup,
+    series: list[MetricSeries],
+) -> tuple[datetime, datetime] | None:
+    """Render one shared date range control for every chart in a group."""
+
+    bounds = _date_bounds(series)
+    if bounds is None or bounds[0] == bounds[1]:
+        return bounds
+
+    default_range = _default_date_range(series) or bounds
+    selected = st.slider(
+        "Период отображения",
+        min_value=bounds[0],
+        max_value=bounds[1],
+        value=default_range,
+        format="DD.MM.YYYY",
+        key=f"metric-range-{group.key}",
+    )
+    if (
+        isinstance(selected, tuple)
+        and len(selected) == 2
+        and all(isinstance(value, datetime) for value in selected)
+    ):
+        return selected
+    return default_range
+
+
+def _render_latest_values(series: list[MetricSeries]) -> None:
+    for start in range(0, len(series), 4):
+        batch = series[start : start + 4]
+        columns = st.columns(len(batch), gap="small")
+        for column, item in zip(columns, batch, strict=True):
+            point = max(
+                item.points,
+                key=lambda candidate: _as_utc_naive(candidate.observed_at),
+            )
+            unit = f" {escape(item.unit)}" if item.unit else ""
+            calculated = (
+                '<span class="mis-latest-badge">расчётный</span>'
+                if item.calculation is not None
+                else ""
+            )
+            card_class = (
+                "mis-latest-value mis-latest-value--calculated mis-enter"
+                if item.calculation is not None
+                else "mis-latest-value mis-enter"
+            )
+            column.markdown(
+                (
+                    f'<div class="{card_class}">'
+                    f"<span>{escape(item.display)}</span>"
+                    f"<strong>{point.value:g}{unit}</strong>"
+                    '<div class="mis-latest-meta">'
+                    f"<small>{point.observed_at.strftime('%d.%m.%Y')}</small>"
+                    f"{calculated}"
+                    "</div>"
+                    "</div>"
+                ),
+                unsafe_allow_html=True,
+            )
 
 
 def _render_calculation_explanations(series: list[MetricSeries]) -> None:
@@ -239,6 +400,27 @@ def _format_input_value(value: float | int | str) -> str:
 def _default_date_range(
     series: list[MetricSeries],
 ) -> tuple[datetime, datetime] | None:
+    bounds = _date_bounds(series)
+    if bounds is None:
+        return None
+
+    earliest, latest = bounds
+    visible_days = (
+        DENSE_VISIBLE_DAYS
+        if any(
+            len(item.points) > DENSE_SERIES_POINT_THRESHOLD
+            for item in series
+        )
+        else DEFAULT_VISIBLE_DAYS
+    )
+    if latest - earliest <= timedelta(days=visible_days):
+        return None
+    return latest - timedelta(days=visible_days), latest
+
+
+def _date_bounds(
+    series: list[MetricSeries],
+) -> tuple[datetime, datetime] | None:
     observed_at = [
         _as_utc_naive(point.observed_at)
         for item in series
@@ -246,12 +428,7 @@ def _default_date_range(
     ]
     if not observed_at:
         return None
-
-    latest = max(observed_at)
-    earliest = min(observed_at)
-    if latest - earliest <= timedelta(days=DEFAULT_VISIBLE_DAYS):
-        return None
-    return latest - timedelta(days=DEFAULT_VISIBLE_DAYS), latest
+    return min(observed_at), max(observed_at)
 
 
 def _as_utc_naive(value: date | datetime) -> datetime:

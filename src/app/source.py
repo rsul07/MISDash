@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import secrets
 from typing import Literal
 
 import streamlit as st
@@ -18,6 +19,9 @@ _SOURCE_KEY = "patient-source"
 _GENERATED_STATE_KEY = "generated-patient"
 _GENERATOR_FORM_KEY = "synthetic-patient-form"
 _DOWNLOAD_KEY = "download-generated-patient"
+_SEED_KEY = "synthetic-patient-seed"
+_RANDOM_SEED_KEY = "randomize-synthetic-patient-seed"
+_MAX_SEED = 2_147_483_647
 
 
 @dataclass(frozen=True, slots=True)
@@ -35,7 +39,7 @@ def render_patient_source() -> PatientInput | None:
     source = st.radio(
         "Источник данных",
         (UPLOAD_SOURCE, GENERATED_SOURCE),
-        horizontal=True,
+        horizontal=False,
         key=_SOURCE_KEY,
     )
     if source == UPLOAD_SOURCE:
@@ -63,15 +67,23 @@ def _render_upload() -> PatientInput | None:
 
 
 def _render_generator() -> PatientInput | None:
+    st.session_state.setdefault(_SEED_KEY, 7)
+    seed = st.number_input(
+        "Seed",
+        min_value=0,
+        max_value=_MAX_SEED,
+        step=1,
+        key=_SEED_KEY,
+        help="Одинаковые параметры создают одинаковую синтетическую выгрузку.",
+    )
+    st.button(
+        "Случайный seed",
+        key=_RANDOM_SEED_KEY,
+        on_click=_randomize_seed,
+        width="stretch",
+    )
+
     with st.form(_GENERATOR_FORM_KEY):
-        seed = st.number_input(
-            "Seed",
-            min_value=0,
-            max_value=2_147_483_647,
-            value=7,
-            step=1,
-            help="Одинаковые параметры создают одинаковую синтетическую выгрузку.",
-        )
         years = st.slider(
             "Глубина истории, лет",
             min_value=1,
@@ -85,10 +97,6 @@ def _render_generator() -> PatientInput | None:
                 "Уменьшается число приёмов, лабораторных и инструментальных "
                 "исследований."
             ),
-        )
-        st.caption(
-            "Режим light не уменьшает плотность дневников самоконтроля "
-            "АД и глюкозы."
         )
         submitted = st.form_submit_button(
             "Сгенерировать и открыть",
@@ -130,6 +138,12 @@ def _render_generator() -> PatientInput | None:
         key=_DOWNLOAD_KEY,
     )
     return selected
+
+
+def _randomize_seed() -> None:
+    """Replace the seed without starting patient generation."""
+
+    st.session_state[_SEED_KEY] = secrets.randbelow(_MAX_SEED + 1)
 
 
 @st.cache_data(show_spinner=False, max_entries=4)
