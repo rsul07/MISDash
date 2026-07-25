@@ -1028,13 +1028,26 @@ html, body, [class*="css"] {{
 
   [data-testid="stHorizontalBlock"]:has(.mis-patient-marker) {{
     display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.55rem !important;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    column-gap: 0.55rem !important;
+    row-gap: 0.65rem !important;
   }}
 
   [data-testid="stHorizontalBlock"]:has(.mis-patient-marker)
     > [data-testid="stColumn"]:first-child {{
     grid-column: 1 / -1;
+  }}
+
+  [data-testid="stHorizontalBlock"]:has(.mis-patient-marker)
+    > [data-testid="stColumn"]:nth-child(2),
+  [data-testid="stHorizontalBlock"]:has(.mis-patient-marker)
+    > [data-testid="stColumn"]:nth-child(3) {{
+    grid-column: span 3;
+  }}
+
+  [data-testid="stHorizontalBlock"]:has(.mis-patient-marker)
+    > [data-testid="stColumn"]:nth-child(n + 4) {{
+    grid-column: span 2;
   }}
 
   [data-testid="stHorizontalBlock"]:has(.mis-patient-marker)
@@ -1055,7 +1068,12 @@ html, body, [class*="css"] {{
 
   .mis-patient-stat {{
     min-height: 5.5rem;
-    padding: 0.65rem;
+    height: 100%;
+    padding: 0.6rem;
+  }}
+
+  .mis-patient-stat strong {{
+    font-size: 1rem;
   }}
 
   [data-testid="stHorizontalBlock"]:has(.mis-latest-value) {{

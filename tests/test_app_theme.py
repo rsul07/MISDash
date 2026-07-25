@@ -126,7 +126,11 @@ def test_mobile_layout_uses_touch_targets_and_card_grids(monkeypatch) -> None:
 
     css = streamlit.markdown.call_args.args[0]
     assert "@media (max-width: 720px)" in css
-    assert 'grid-template-columns: repeat(2, minmax(0, 1fr));' in css
+    assert 'grid-template-columns: repeat(6, minmax(0, 1fr));' in css
+    assert '[data-testid="stColumn"]:nth-child(2)' in css
+    assert '[data-testid="stColumn"]:nth-child(n + 4)' in css
+    assert "grid-column: span 3;" in css
+    assert "grid-column: span 2;" in css
     assert '[data-testid="stHorizontalBlock"]:has(.mis-patient-marker)' in css
     assert '[data-testid="stHorizontalBlock"]:has(.mis-latest-value)' in css
     assert ".mis-visit-table thead" in css
