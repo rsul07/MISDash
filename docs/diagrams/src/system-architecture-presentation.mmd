@@ -1,0 +1,52 @@
+%%{init: {
+  "flowchart": {
+    "curve": "linear",
+    "nodeSpacing": 34,
+    "rankSpacing": 58
+  }
+}}%%
+flowchart TB
+    subgraph inputs["1 · ДАННЫЕ"]
+        direction LR
+        export["Выгрузка МИС<br/><small>грязный JSON</small>"]
+        generator["Generator<br/><small>синтетические данные</small>"]
+        export ~~~ generator
+    end
+
+    subgraph core["2 · MIS DASH"]
+        direction LR
+        parser["Parser<br/><small>очистка и нормализация</small>"]
+        record["PatientRecord<br/><small>единая история пациента</small>"]
+        backend["Backend<br/><small>метрики · расчёты · флаги</small>"]
+        response["DashboardResponse<br/><small>контракт интерфейса</small>"]
+
+        parser --> record --> backend --> response
+    end
+
+    subgraph experience["3 · РЕЗУЛЬТАТ"]
+        direction LR
+        dashboard["Web-dashboard<br/><small>обзор · динамика · приёмы</small>"]
+        summary["ИИ-сводка<br/><small>по кнопке · свободный текст</small>"]
+    end
+
+    export --> parser
+    generator --> parser
+    response --> dashboard
+    record -.-> summary
+    summary -.-> dashboard
+
+    classDef source fill:#eef5f8,stroke:#6f91a8,color:#0b2d4f,stroke-width:2px;
+    classDef process fill:#e8f4fb,stroke:#168cca,color:#082a4c,stroke-width:2px;
+    classDef contract fill:#e5f5f1,stroke:#10a889,color:#075f50,stroke-width:2.5px;
+    classDef output fill:#0b2d4f,stroke:#0b2d4f,color:#ffffff,stroke-width:2.5px;
+    classDef ai fill:#fff5e5,stroke:#d48817,color:#704609,stroke-width:2px;
+
+    class export,generator source;
+    class parser,backend process;
+    class record,response contract;
+    class dashboard output;
+    class summary ai;
+
+    style inputs fill:#f8fbfc,stroke:#cbdde5,stroke-width:1.5px
+    style core fill:#f8fbfc,stroke:#168cca,stroke-width:2px
+    style experience fill:#f8fbfc,stroke:#cbdde5,stroke-width:1.5px

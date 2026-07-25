@@ -1,0 +1,32 @@
+%%{init: {
+  "sequence": {
+    "actorMargin": 65,
+    "boxMargin": 12,
+    "messageMargin": 42,
+    "noteMargin": 18,
+    "width": 190
+  }
+}}%%
+sequenceDiagram
+    autonumber
+    actor Doctor as Врач
+    participant UI as MIS Dash
+    participant Core as Детерминированный pipeline
+    participant Gemini as Gemini API
+
+    rect rgb(235, 246, 250)
+        Note over Doctor,Core: Основной сценарий
+        Doctor->>UI: Загружает JSON или запускает generator
+        UI->>Core: Обработать историю пациента
+        Core->>Core: Нормализация → расчёты → красные флаги
+        Core-->>UI: PatientRecord + DashboardResponse
+        UI-->>Doctor: Обзор, динамика и приёмы
+    end
+
+    rect rgb(255, 247, 232)
+        Note over Doctor,Gemini: Необязательная ИИ-сводка
+        Doctor->>UI: Нажимает «Сформировать»
+        UI->>Gemini: Ограниченный текст + JSON Schema
+        Gemini-->>UI: Структурированный ClinicalSummary
+        UI-->>Doctor: Симптомы, находки и открытые вопросы
+    end
