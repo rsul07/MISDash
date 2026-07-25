@@ -31,7 +31,7 @@ def run_app() -> None:
         page_title="MIS Dash",
         page_icon="🩺",
         layout="wide",
-        initial_sidebar_state="expanded",
+        initial_sidebar_state="auto",
     )
     apply_app_theme()
 

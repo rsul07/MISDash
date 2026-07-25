@@ -116,3 +116,18 @@ def test_calculated_metric_card_has_distinct_visual_treatment(
     css = streamlit.markdown.call_args.args[0]
     assert ".mis-latest-value--calculated" in css
     assert "inset 0.2rem 0 0 var(--mis-teal)" in css
+
+
+def test_mobile_layout_uses_touch_targets_and_card_grids(monkeypatch) -> None:
+    streamlit = MagicMock()
+    monkeypatch.setattr(theme, "st", streamlit)
+
+    theme.apply_app_theme()
+
+    css = streamlit.markdown.call_args.args[0]
+    assert "@media (max-width: 720px)" in css
+    assert 'grid-template-columns: repeat(2, minmax(0, 1fr));' in css
+    assert '[data-testid="stHorizontalBlock"]:has(.mis-patient-marker)' in css
+    assert '[data-testid="stHorizontalBlock"]:has(.mis-latest-value)' in css
+    assert ".mis-visit-table thead" in css
+    assert "min-height: 2.75rem;" in css

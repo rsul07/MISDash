@@ -17,6 +17,7 @@ def test_page_configuration_has_no_training_copy(monkeypatch) -> None:
 
     config = streamlit.set_page_config.call_args.kwargs
     assert config["page_title"] == "MIS Dash"
+    assert config["initial_sidebar_state"] == "auto"
     assert "menu_items" not in config
 
 

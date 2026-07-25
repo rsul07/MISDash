@@ -97,7 +97,7 @@ def test_dense_series_use_lines_without_repeated_axis_controls() -> None:
     assert figure.layout.xaxis.title.text is None
     assert figure.layout.yaxis.title.text is None
     assert figure.layout.xaxis.rangeselector.buttons == ()
-    assert figure.layout.legend.entrywidth == 220
+    assert figure.layout.showlegend is False
     assert figure.layout.transition.duration == 250
     assert figure.layout.yaxis.gridcolor == "#E4EDF2"
 
@@ -247,8 +247,40 @@ def test_calculated_metrics_are_rendered_first_and_emphasized() -> None:
     assert figure.data[0].name == "Пульсовое давление"
     assert figure.data[0].line.width == 3.6
     assert figure.data[0].marker.symbol == "diamond"
+    assert figure.data[0].meta == {"calculated": True}
     assert figure.data[1].line.width == 2.35
     assert figure.data[1].marker.symbol == "circle"
+    assert figure.data[1].meta == {"calculated": False}
+
+
+def test_chart_legend_is_responsive_and_marks_calculated_series(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    streamlit = MagicMock()
+    monkeypatch.setattr(component, "st", streamlit)
+    calculated = _series(
+        "pulse-pressure",
+        "Пульсовое давление",
+        "mmHg",
+        40,
+    )
+    calculated.calculation = CalculationInfo(
+        code="pulse-pressure",
+        description="Разница.",
+        purpose="Контекст.",
+        method="SBP - DBP",
+        standard="ESC",
+    )
+    measured = _series("systolic", "Систолическое АД", "mmHg", 120)
+
+    figure = component._build_figure("mmHg", [calculated, measured])
+    component._render_chart_legend(figure)
+
+    html = streamlit.markdown.call_args.args[0]
+    assert "mis-chart-legend" in html
+    assert "Пульсовое давление" in html
+    assert "расчётный" in html
+    assert "mis-chart-legend-marker--diamond" in html
 
 
 def test_metric_hover_shows_backend_interpretation() -> None:

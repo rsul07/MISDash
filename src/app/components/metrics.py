@@ -5,7 +5,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta, timezone
 from html import escape
-from math import ceil
 
 import plotly.graph_objects as go
 import streamlit as st
@@ -121,6 +120,7 @@ def render_metrics(dashboard: DashboardResponse) -> None:
             for figure_index, figure in enumerate(
                 _build_figures(series, visible_range)
             ):
+                _render_chart_legend(figure)
                 st.plotly_chart(
                     figure,
                     key=f"metric-chart-{group.key}-{figure_index}",
@@ -193,6 +193,7 @@ def _build_figure(
                     else "lines+markers"
                 ),
                 name=item.display,
+                meta={"calculated": is_calculated},
                 line={"color": color, "width": 3.6 if is_calculated else 2.35},
                 marker={
                     "size": 7 if is_calculated else 5.5,
@@ -214,27 +215,15 @@ def _build_figure(
     if visible_range is not None:
         xaxis["range"] = visible_range
 
-    legend_rows = max(1, ceil(len(series) / 2))
-
     figure.update_layout(
         height=390,
         hovermode="closest",
-        legend={
-            "title": {"text": ""},
-            "orientation": "h",
-            "yanchor": "bottom",
-            "y": 1.02,
-            "xanchor": "left",
-            "x": 0,
-            "entrywidth": 220,
-            "entrywidthmode": "pixels",
-            "font": {"color": MUTED, "size": 11},
-        },
+        showlegend=False,
         margin={
-            "l": 48,
-            "r": 24,
-            "t": 28 + legend_rows * 24,
-            "b": 30,
+            "l": 46,
+            "r": 18,
+            "t": 18,
+            "b": 28,
         },
         xaxis=xaxis,
         yaxis={
@@ -259,6 +248,35 @@ def _build_figure(
         tickfont={"color": MUTED},
     )
     return figure
+
+
+def _render_chart_legend(figure: go.Figure) -> None:
+    """Render a responsive legend outside Plotly's fixed canvas."""
+
+    items = []
+    for trace in figure.data:
+        meta = trace.meta if isinstance(trace.meta, dict) else {}
+        is_calculated = bool(meta.get("calculated"))
+        calculated_class = " mis-chart-legend-item--calculated" if is_calculated else ""
+        badge = (
+            '<small class="mis-chart-legend-badge">расчётный</small>'
+            if is_calculated
+            else ""
+        )
+        marker_class = " mis-chart-legend-marker--diamond" if is_calculated else ""
+        color = escape(str(trace.line.color))
+        items.append(
+            (
+                f'<div class="mis-chart-legend-item{calculated_class}" '
+                f'style="--series-color:{color}">'
+                f'<i class="mis-chart-legend-marker{marker_class}"></i>'
+                f"<span>{escape(str(trace.name))}</span>{badge}</div>"
+            )
+        )
+    st.markdown(
+        f'<div class="mis-chart-legend">{"".join(items)}</div>',
+        unsafe_allow_html=True,
+    )
 
 
 def _render_date_range(

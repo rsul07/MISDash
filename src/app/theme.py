@@ -662,6 +662,196 @@ html, body, [class*="css"] {{
   font-weight: 750;
 }}
 
+.mis-chart-legend {{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.8rem;
+  margin: 0.65rem 0 0.45rem;
+}}
+
+.mis-chart-legend-item {{
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+  min-width: 0;
+  color: var(--mis-muted);
+  font-size: 0.7rem;
+  line-height: 1.3;
+}}
+
+.mis-chart-legend-marker {{
+  position: relative;
+  flex: 0 0 auto;
+  width: 1.35rem;
+  height: 0.16rem;
+  border-radius: 999px;
+  background: var(--series-color);
+}}
+
+.mis-chart-legend-marker::after {{
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0.38rem;
+  height: 0.38rem;
+  border: 1px solid #fff;
+  border-radius: 50%;
+  background: var(--series-color);
+  content: "";
+  transform: translate(-50%, -50%);
+}}
+
+.mis-chart-legend-item--calculated .mis-chart-legend-marker {{
+  height: 0.24rem;
+}}
+
+.mis-chart-legend-marker--diamond::after {{
+  border-radius: 0.08rem;
+  transform: translate(-50%, -50%) rotate(45deg);
+}}
+
+.mis-chart-legend-badge {{
+  padding: 0.1rem 0.3rem;
+  border-radius: 999px;
+  background: rgba(16, 168, 137, 0.1);
+  color: var(--mis-action);
+  font-size: 0.56rem;
+  font-weight: 750;
+}}
+
+.mis-visit-table-shell {{
+  max-height: 32rem;
+  overflow: auto;
+  border: 1px solid var(--mis-border);
+  border-radius: 0.95rem;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 0.22rem 0.9rem rgba(8, 42, 76, 0.05);
+}}
+
+.mis-visit-table {{
+  width: 100%;
+  min-width: 54rem;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+  color: var(--mis-ink);
+  font-size: 0.78rem;
+}}
+
+.mis-visit-table th {{
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 0.72rem 0.8rem;
+  border-bottom: 1px solid #cbdde5;
+  background: #edf5f7;
+  color: var(--mis-muted);
+  font-size: 0.67rem;
+  font-weight: 750;
+  letter-spacing: 0.045em;
+  text-align: left;
+  text-transform: uppercase;
+}}
+
+.mis-visit-table th:nth-child(1) {{ width: 12%; }}
+.mis-visit-table th:nth-child(2) {{ width: 20%; }}
+.mis-visit-table th:nth-child(3) {{ width: 38%; }}
+.mis-visit-table th:nth-child(4) {{ width: 30%; }}
+
+.mis-visit-table td {{
+  padding: 0.85rem 0.8rem;
+  border-bottom: 1px solid #e5eef2;
+  vertical-align: top;
+}}
+
+.mis-visit-table tbody tr {{
+  transition: background-color 160ms ease;
+}}
+
+.mis-visit-table tbody tr:hover {{
+  background: rgba(28, 143, 205, 0.045);
+}}
+
+.mis-visit-table tbody tr:last-child td {{
+  border-bottom: 0;
+}}
+
+.mis-visit-date,
+.mis-visit-practitioner,
+.mis-visit-diagnoses {{
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}}
+
+.mis-visit-date strong,
+.mis-visit-practitioner strong,
+.mis-visit-diagnoses strong {{
+  line-height: 1.35;
+}}
+
+.mis-visit-date small,
+.mis-visit-practitioner span {{
+  color: var(--mis-muted);
+  font-size: 0.69rem;
+}}
+
+.mis-visit-primary-label {{
+  width: fit-content;
+  padding: 0.12rem 0.38rem;
+  border-radius: 999px;
+  background: rgba(28, 143, 205, 0.1);
+  color: var(--mis-blue);
+  font-size: 0.58rem;
+  font-weight: 750;
+  letter-spacing: 0.025em;
+}}
+
+.mis-visit-diagnosis-list {{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.28rem;
+  margin-top: 0.15rem;
+}}
+
+.mis-visit-diagnosis-chip {{
+  padding: 0.15rem 0.38rem;
+  border: 1px solid #cfe2e8;
+  border-radius: 999px;
+  background: #f3f8fa;
+  color: #36536a;
+  font-family: ui-monospace, "Cascadia Code", monospace;
+  font-size: 0.62rem;
+  font-weight: 700;
+}}
+
+.mis-visit-diagnosis-more {{
+  border-color: #b9ded5;
+  background: rgba(16, 168, 137, 0.08);
+  color: var(--mis-action);
+}}
+
+.mis-visit-complaints {{
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  color: #36536a;
+  line-height: 1.5;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}}
+
+.mis-visit-missing {{
+  color: var(--mis-muted);
+  font-style: italic;
+}}
+
+.mis-visit-table-empty {{
+  padding: 2rem !important;
+  color: var(--mis-muted);
+  text-align: center;
+}}
+
 [data-testid="stSegmentedControl"] {{
   margin: 0.4rem 0 1.15rem;
 }}
@@ -792,12 +982,237 @@ html, body, [class*="css"] {{
 
 @media (max-width: 720px) {{
   [data-testid="stMainBlockContainer"] {{
-    padding-left: 1rem;
-    padding-right: 1rem;
+    padding: 2.5rem 0.75rem 2.5rem;
   }}
+
+  [data-testid="stSidebar"] [data-testid="stSidebarContent"] {{
+    padding-top: 0.75rem;
+  }}
+
+  [data-testid="stSidebar"] button,
+  [data-testid="stSidebar"] input,
+  [data-testid="stSegmentedControl"] button,
+  [data-testid="stTabs"] [role="tab"] {{
+    min-height: 2.75rem;
+  }}
+
+  [data-testid="stSidebar"] input,
+  [data-testid="stTextInput"] input {{
+    font-size: 1rem;
+  }}
+
+  [data-testid="stSegmentedControl"] [role="radiogroup"],
+  [data-testid="stSegmentedControl"] [data-baseweb="button-group"] {{
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    gap: 0.25rem;
+  }}
+
+  [data-testid="stSegmentedControl"] button {{
+    width: 100%;
+    padding: 0.4rem 0.5rem;
+  }}
+
+  [data-testid="stTabs"] [data-baseweb="tab-list"] {{
+    overflow-x: auto;
+    scrollbar-width: thin;
+    scroll-snap-type: x proximity;
+  }}
+
+  [data-testid="stTabs"] [data-baseweb="tab"] {{
+    flex: 0 0 auto;
+    min-height: 2.75rem;
+    scroll-snap-align: start;
+  }}
+
+  [data-testid="stHorizontalBlock"]:has(.mis-patient-marker) {{
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.55rem !important;
+  }}
+
+  [data-testid="stHorizontalBlock"]:has(.mis-patient-marker)
+    > [data-testid="stColumn"]:first-child {{
+    grid-column: 1 / -1;
+  }}
+
+  [data-testid="stHorizontalBlock"]:has(.mis-patient-marker)
+    > [data-testid="stColumn"] {{
+    width: auto !important;
+    min-width: 0 !important;
+    flex: none !important;
+  }}
+
+  .mis-patient-heading {{
+    padding: 0.25rem 0 0.5rem;
+  }}
+
+  .mis-patient-heading h2 {{
+    font-size: 1.35rem;
+    overflow-wrap: anywhere;
+  }}
+
+  .mis-patient-stat {{
+    min-height: 5.5rem;
+    padding: 0.65rem;
+  }}
+
+  [data-testid="stHorizontalBlock"]:has(.mis-latest-value) {{
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.55rem !important;
+  }}
+
+  [data-testid="stHorizontalBlock"]:has(.mis-latest-value)
+    > [data-testid="stColumn"] {{
+    width: auto !important;
+    min-width: 0 !important;
+    flex: none !important;
+  }}
+
+  .mis-latest-value {{
+    min-height: 6rem;
+    margin-bottom: 0;
+    padding: 0.7rem;
+  }}
+
+  .mis-latest-value > strong {{
+    font-size: 1.1rem;
+  }}
+
+  .mis-chart-legend {{
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.45rem;
+    margin-top: 0.75rem;
+  }}
+
+  .mis-chart-legend-item {{
+    font-size: 0.72rem;
+  }}
+
+  .mis-flag-heading {{
+    flex-direction: column-reverse;
+    gap: 0.55rem;
+  }}
+
+  .mis-flag-card {{
+    min-height: auto;
+    padding: 0.1rem;
+  }}
+
+  .mis-flag-heading h3 {{
+    font-size: 1rem;
+  }}
+
+  .mis-flag-card p {{
+    font-size: 0.84rem;
+  }}
+
+  .mis-clinical-panel {{
+    min-height: 0;
+    max-height: none;
+    margin-top: 0.35rem;
+  }}
+
+  [data-testid="stPlotlyChart"] {{
+    border-radius: 0.75rem;
+  }}
+
+  .mis-visit-table-shell {{
+    max-height: none;
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }}
+
+  .mis-visit-table {{
+    min-width: 0;
+    border-collapse: separate;
+  }}
+
+  .mis-visit-table thead {{
+    display: none;
+  }}
+
+  .mis-visit-table,
+  .mis-visit-table tbody,
+  .mis-visit-table tr,
+  .mis-visit-table td {{
+    display: block;
+    width: 100%;
+  }}
+
+  .mis-visit-table tbody {{
+    display: grid;
+    gap: 0.75rem;
+  }}
+
+  .mis-visit-table tbody tr {{
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    padding: 0.75rem;
+    border: 1px solid var(--mis-border);
+    border-radius: 0.85rem;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 0.18rem 0.7rem rgba(8, 42, 76, 0.045);
+  }}
+
+  .mis-visit-table td {{
+    padding: 0.45rem;
+    border: 0;
+  }}
+
+  .mis-visit-table td:nth-child(3),
+  .mis-visit-table td:nth-child(4) {{
+    grid-column: 1 / -1;
+    border-top: 1px solid #e5eef2;
+    margin-top: 0.2rem;
+    padding-top: 0.65rem;
+  }}
+
+  .mis-visit-table td::before {{
+    display: block;
+    margin-bottom: 0.32rem;
+    color: var(--mis-muted);
+    content: attr(data-label);
+    font-size: 0.6rem;
+    font-weight: 750;
+    letter-spacing: 0.045em;
+    text-transform: uppercase;
+  }}
+
+  .mis-visit-complaints {{
+    -webkit-line-clamp: 4;
+  }}
+
   .mis-empty-state {{
-    margin-top: 2rem;
-    padding: 2rem 1.25rem;
+    margin-top: 1rem;
+    padding: 1.75rem 1rem;
+  }}
+
+  .mis-empty-state h1 {{
+    font-size: 2rem;
+  }}
+
+  .mis-empty-state h2 {{
+    font-size: 1.3rem;
+  }}
+
+  .mis-empty-steps {{
+    align-items: stretch;
+    flex-direction: column;
+  }}
+
+  .mis-section-heading {{
+    margin: 1rem 0 0.75rem;
+  }}
+
+  .mis-section-heading h2 {{
+    font-size: 1.45rem;
   }}
 }}
 
