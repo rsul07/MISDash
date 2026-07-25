@@ -40,7 +40,6 @@ Streamlit-интерфейс показывает профиль пациент�
 - [Индекс документации](docs/README.md)
 - [Синтетический generator](docs/generator.md)
 - [Контроль качества parser](docs/parser_quality.md)
-- [Исходники отчёта](docs/report/README.md)
 - [Архитектурные диаграммы](docs/diagrams/README.md)
 
 ## Быстрый старт
@@ -113,7 +112,7 @@ python -m src.summarizer.check
 - **Google Gemini API и `google-genai`** — структурированная ИИ-сводка по
   ограниченному медицинскому контексту;
 - **pytest** — модульные и интеграционные тесты;
-- **Typst и Mermaid** — отчёт и архитектурные диаграммы.
+- **Mermaid** — редактируемые архитектурные диаграммы.
 
 ## Структура репозитория
 
@@ -122,7 +121,6 @@ mis_dash/
 ├── data/                 # синтетическая эталонная выгрузка
 ├── docs/
 │   ├── diagrams/         # общие Mermaid-исходники и SVG/PNG
-│   ├── report/           # Typst-отчёт и публичные шаблоны
 │   └── screenshots/      # воспроизводимые кадры на синтетических данных
 ├── src/
 │   ├── app/              # Streamlit-интерфейс
