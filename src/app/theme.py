@@ -1004,16 +1004,21 @@ html, body, [class*="css"] {{
   }}
 
   [data-testid="stSegmentedControl"] [role="radiogroup"],
-  [data-testid="stSegmentedControl"] [data-baseweb="button-group"] {{
-    display: grid;
+  [data-testid="stSegmentedControl"] [role="group"],
+  [data-testid="stSegmentedControl"] [data-baseweb="button-group"],
+  [data-testid="stSegmentedControl"] div:has(> button) {{
+    display: grid !important;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     width: 100%;
     gap: 0.25rem;
+    overflow: visible !important;
   }}
 
   [data-testid="stSegmentedControl"] button {{
     width: 100%;
+    min-width: 0;
     padding: 0.4rem 0.5rem;
+    white-space: normal;
   }}
 
   [data-testid="stTabs"] [data-baseweb="tab-list"] {{
