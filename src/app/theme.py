@@ -1029,8 +1029,12 @@ html, body, [class*="css"] {{
   [data-testid="stHorizontalBlock"]:has(.mis-patient-marker) {{
     display: grid !important;
     grid-template-columns: repeat(6, minmax(0, 1fr));
-    column-gap: 0.55rem !important;
-    row-gap: 0.65rem !important;
+    gap: 1.5rem !important;
+  }}
+
+  [data-testid="stLayoutWrapper"]:has(.mis-patient-marker)
+    > div {{
+    padding: 0 0.5rem 1rem 0.5rem !important;
   }}
 
   [data-testid="stHorizontalBlock"]:has(.mis-patient-marker)

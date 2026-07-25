@@ -132,6 +132,8 @@ def test_mobile_layout_uses_touch_targets_and_card_grids(monkeypatch) -> None:
     assert "grid-column: span 3;" in css
     assert "grid-column: span 2;" in css
     assert '[data-testid="stHorizontalBlock"]:has(.mis-patient-marker)' in css
+    assert "gap: 1.5rem !important;" in css
+    assert "padding: calc(-1px + 1rem) 1rem 2rem 1rem !important;" in css
     assert '[data-testid="stHorizontalBlock"]:has(.mis-latest-value)' in css
     assert ".mis-visit-table thead" in css
     assert "min-height: 2.75rem;" in css
